@@ -28,8 +28,11 @@ interface TermDao {
     @Query("SELECT * from terms_table ORDER BY name ASC")
     fun getAllTermsStream(): Flow<List<Term>>
 
+    @Query("SELECT name FROM terms_table")
+    fun getAllNamesStream(): Flow<List<String>>
+
     @Query("DELETE from terms_table")
-    fun deleteAll()
+    suspend fun deleteAll()
 
 //    @Query("SELECT  from terms_table")
 //    fun getAllIdentifyingNames(): Flow<List<String>>

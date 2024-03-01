@@ -11,5 +11,4 @@ data class Term(
 //    val idName: String = "",
     val name: String = "",
     val definition: String = "",
-//    val definition: AnnotatedString
-)
+    )

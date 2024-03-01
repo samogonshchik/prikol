@@ -30,7 +30,10 @@ fun ViewTermScreen(
     navigateToEdit: (Int) -> Unit = {  },
     viewModel: ViewTermViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+
+
     val viewTermUiState by viewModel.viewTermUiState.collectAsState()
+//    val allNames by viewModel.allNames.collectAsState()
 
     Scaffold(
         floatingActionButton = {

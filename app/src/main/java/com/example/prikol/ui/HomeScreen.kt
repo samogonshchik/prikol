@@ -198,13 +198,15 @@ fun HomeTopAppBar(
                             menuExpanded = false
                         }
                     )
-//                    DropdownMenuItem(
-//                        text = { Text(text = "Clear all") },
-//                        onClick = {
-//                            viewModel.deleteAll()
-//                            menuExpanded = false
-//                        }
-//                    )
+                    DropdownMenuItem(
+                        text = { Text(text = "Clear all") },
+                        onClick = {
+                            coroutineScope.launch {
+                                viewModel.deleteAll()
+                            }
+                            menuExpanded = false
+                        }
+                    )
                     DropdownMenuItem(
                         text = { Text(text = "test append") },
                         onClick = {

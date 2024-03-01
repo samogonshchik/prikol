@@ -18,7 +18,7 @@ class HomeViewModel(private val termDao: TermDao) : ViewModel() { // If no funct
             initialValue = HomeUiState()
         )
 
-    fun deleteAll() {
+    suspend fun deleteAll() {
         termDao.deleteAll()
     }
 
