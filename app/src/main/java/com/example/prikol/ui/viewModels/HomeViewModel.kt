@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class HomeViewModel(private val termDao: TermDao) : ViewModel() { // If no function use it, "private val" isn't needed
-
     val homeUiState: StateFlow<HomeUiState> = termDao.getAllTermsStream().map { HomeUiState(it) }
         .stateIn(
             scope = viewModelScope,

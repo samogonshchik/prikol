@@ -38,12 +38,14 @@ data class TermUiState(
 
 data class TermInfo(
     val id: Int = 0,
+    val type: String = "Term",
     val name: String = "",
     val definition: String = ""
 )
 
 fun TermInfo.toTerm() = Term(
     id = id,
+    type = type,
     name = name,
     definition = definition
 )

@@ -1,17 +1,13 @@
 package com.example.prikol.ui
 
-import android.content.Intent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -24,7 +20,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -39,7 +34,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun EditTermScreen(
     navigateBack: () -> Unit = {  },
-    clearBackStack: () -> Unit = {  },
     navigateHome: () -> Unit = {  },
     viewModel: EditTermViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
@@ -53,12 +47,12 @@ fun EditTermScreen(
                     coroutineScope.launch {
                         viewModel.updateTerm()
                     }
-                    navigateHome()
+                    navigateBack()
                 }
             ) {
                 Icon(
                     imageVector = Icons.Default.Done,
-                    contentDescription = "Add term"
+                    contentDescription = "Done"
                 )
             }
         },
@@ -75,30 +69,17 @@ fun EditTermScreen(
                     }
                 },
                 actions = {
-                    var menuExpanded: Boolean by remember { mutableStateOf(false) }
+//                    var menuExpanded: Boolean by remember { mutableStateOf(false) }
 
-                    Box() {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "More"
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }) {
-                            DropdownMenuItem(
-                                text = { Text(text = "Delete term") },
-                                onClick = {
-                                    deleteRequested = true
-                                }
-                            )
-                        }
+                    IconButton(onClick = { deleteRequested = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "More"
+                        )
                     }
                 }
             )
         }
-
     ) { innerPadding ->
         EnterTermForm(
             modifier = Modifier
@@ -110,16 +91,17 @@ fun EditTermScreen(
         )
 
         if (deleteRequested) {
-            AlertDialog(onDismissRequest = { /* Do nothing */ },
+            AlertDialog(
+                onDismissRequest = { deleteRequested = false },
                 title = { Text(text = "Term deleting") },
                 text = { Text("Are u sure?") },
                 confirmButton = {
                     TextButton(
                         onClick = {
                             deleteRequested = false
-                            clearBackStack()
+                            navigateHome()
                             coroutineScope.launch {
-                                //                                delay(7_000L) // why listed below tasks won't be executed after delay?
+//                                delay(7_000L) // why tasks listed below won't be executed after delay?
                                 viewModel.deleteTerm()
                             }
                         }

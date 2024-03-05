@@ -5,7 +5,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.example.prikol.ui.AddTermScreen
 import com.example.prikol.ui.EditTermScreen
 import com.example.prikol.ui.HomeScreen
@@ -45,26 +44,23 @@ fun PrikolNavHost(
                 navigateBack = { navController.popBackStack() }
             )
         }
-        composable(route = "viewTerm/{termId}",
+        composable(route = "viewTerm/{termId}", // Why and how it works
 //            arguments = listOf(navArgument("termId"))
             ) {
             ViewTermScreen(
                 navigateBack = { navController.popBackStack() },
-                navigateToEdit = {
-                    navController.navigate("editTerm/$it")
+                navigateToEdit = { navController.navigate("editTerm/$it") },
+                navigateToNext = {
+                    navController.popBackStack()
+                    navController.navigate("viewTerm/$it")
                 }
             )
         }
         composable(route = "editTerm/{termId}") {
             EditTermScreen(
                 navigateBack = { navController.popBackStack() },
-                clearBackStack = {
-                    navController.popBackStack()
-                    navController.popBackStack()
-                                 },
-                navigateHome = { navController.navigate("home")}
+                navigateHome = { navController.popBackStack("home", inclusive = false) }
             )
         }
-
     }
 }

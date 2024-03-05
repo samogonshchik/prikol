@@ -1,6 +1,5 @@
 package com.example.prikol.data
 
-import androidx.compose.ui.text.AnnotatedString
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -8,7 +7,7 @@ import androidx.room.PrimaryKey
 data class Term(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-//    val idName: String = "",
+    val type: String = "",
     val name: String = "",
-    val definition: String = "",
-    )
+    val definition: String = ""
+)

@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -83,12 +85,12 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(vertical = defaultOffset)
+                .padding(top = defaultOffset/2)
         ) {
             items(items = homeUiState.termsList, key = { it.id }) { term ->
                 TermToDisplay(
                     term = term,
-                    onClick = navigateToView
+                    onClick = navigateToView,
                 )
             }
         }
@@ -98,7 +100,7 @@ fun HomeScreen(
 fun sendDatabase(context: Context) {
     val databaseFile: File = context.getDatabasePath(databaseName) // Why it also could return a path for .db file when it was passed to a getDatabasePath()?
     val uri = FileProvider.getUriForFile(context, "com.example.prikol.fileprovider", databaseFile)
-    Log.d("ROFL", "generated uri is $uri")
+    Log.d(TAG, "generated uri is $uri")
     val intent = Intent(ACTION_SEND)
     intent.type = "vnd.android.cursor.dir/email" // What is it? Probably it's all about type // "application/x-sqlite3"
     intent.putExtra(Intent.EXTRA_STREAM, uri)
@@ -111,17 +113,28 @@ fun sendDatabase(context: Context) {
 @Composable
 fun TermToDisplay(
     term: Term,
+    modifier: Modifier = Modifier,
     onClick: (Int) -> Unit = {  }
 ) {
+    // Put Card in "when" construction?
     Card(
+        colors = when (term.type) {
+            "Paragraph" -> CardDefaults.cardColors(
+                containerColor = Color(0xFFFFFBFE)
+            )
+            else -> CardDefaults.cardColors()
+        },
+        border = BorderStroke(1.dp, if (term.type == "Paragraph") Color.Black else Color.Transparent),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier
             .fillMaxWidth()
+            .padding(defaultOffset, defaultOffset/2)
             .clickable { onClick(term.id) }
-            .padding(defaultOffset)
-    ) {
+        ) {
         Text(
-            text = term.name,
-            modifier = Modifier.padding(defaultOffset)
+            text = "${term.id} " + if (term.type == "Paragraph") term.name + ". " + term.definition else term.name,
+            modifier = Modifier
+                .padding(defaultOffset)
         )
     }
 }
@@ -151,6 +164,7 @@ fun HomeTopAppBar(
             val uri: Uri? = intent?.data
             Log.d(TAG, "file uri is $uri")
 //            Log.d(TAG, "path to this uri is ${uri?.path}")
+
             val contentResolver = context.contentResolver
             val inputStream = uri?.let { contentResolver.openInputStream(it) }
             val byteArray = inputStream?.readBytes()
@@ -158,11 +172,14 @@ fun HomeTopAppBar(
             if (byteArray != null) {
                 databaseFile.writeBytes(byteArray)
             }
+
             coroutineScope.launch {
                 viewModel.testAppend()
             }
-//            val outputStream = contentResolver.openOutputStream(FileProvider.getUriForFile(context, "com.example.prikol.fileprovider", databaseFile))
-//            outputStream?.write(byteArray) // No difference?
+
+//            val outputStream = contentResolver.openOutputStream(
+//                    FileProvider.getUriForFile(context, "com.example.prikol.fileprovider", databaseFile))    // No difference?
+//            outputStream?.write(byteArray)
 //            outputStream?.close()
         }
     }
@@ -216,13 +233,6 @@ fun HomeTopAppBar(
                             menuExpanded = false
                         }
                     )
-//                            DropdownMenuItem(
-//                                text = { Text(text = "Settings") },
-//                                onClick = {
-//
-//                                    menuExpanded = false
-//                                }
-//                            )
                 }
             }
         }

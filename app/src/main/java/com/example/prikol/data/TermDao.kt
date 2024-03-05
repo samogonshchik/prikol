@@ -19,21 +19,21 @@ interface TermDao {
     @Delete
     suspend fun delete(term: Term)
 
-    @Query("SELECT * from terms_table WHERE id = :id")
+    @Query("SELECT * FROM terms_table WHERE id = :id")
     fun getTermStream(id: Int): Flow<Term>
 
-    @Query("SELECT * from terms_table WHERE name = :name")
+    @Query("SELECT * FROM terms_table WHERE name = :name")
     fun getTermStream(name: String): Flow<Term>
 
-    @Query("SELECT * from terms_table ORDER BY name ASC")
+    @Query("SELECT * FROM terms_table ORDER BY id ASC")
     fun getAllTermsStream(): Flow<List<Term>>
 
     @Query("SELECT name FROM terms_table")
     fun getAllNamesStream(): Flow<List<String>>
 
-    @Query("DELETE from terms_table")
+    @Query("DELETE FROM terms_table")
     suspend fun deleteAll()
 
-//    @Query("SELECT  from terms_table")
-//    fun getAllIdentifyingNames(): Flow<List<String>>
+    @Query("SELECT MIN(id) FROM terms_table WHERE id > :id")
+    suspend fun getNextId(id: Int): Int?
 }

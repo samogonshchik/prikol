@@ -22,12 +22,6 @@ class EditTermViewModel(
     var termUiState by mutableStateOf(TermUiState())
         private set
 
-    init {
-        viewModelScope.launch {
-            termUiState = TermUiState(termInfo = termDao.getTermStream(termId).filterNotNull().first().toTermInfo())
-        }
-    }
-
     fun updateUiState(termInfo: TermInfo) {
         termUiState = TermUiState(termInfo)
     }
@@ -40,11 +34,16 @@ class EditTermViewModel(
         termDao.delete(termUiState.termInfo.toTerm()) // will it behaveCorrectly?
     }
 
-//    suspend fun test() { termDao.insert(Term(name = "test000")) }
+    init {
+        viewModelScope.launch {
+            termUiState = TermUiState(termInfo = termDao.getTermStream(termId).filterNotNull().first().toTermInfo())
+        }
+    }
 }
 
 fun Term.toTermInfo() = TermInfo(
     id = id,
+    type = type,
     name = name,
     definition = definition
 )

@@ -1,5 +1,6 @@
 package com.example.prikol.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -7,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -28,26 +28,18 @@ import com.example.prikol.ui.viewModels.ViewTermViewModel
 fun ViewTermScreen(
     navigateBack: () -> Unit = {  },
     navigateToEdit: (Int) -> Unit = {  },
+    navigateToNext: (Int) -> Unit = {  },
     viewModel: ViewTermViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-
-
     val viewTermUiState by viewModel.viewTermUiState.collectAsState()
+    val separator = when (viewTermUiState.term.type) {
+        "Term" -> " — "
+        "Theorem" -> ":\n"
+        else -> "\n"
+    }
 //    val allNames by viewModel.allNames.collectAsState()
 
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    navigateToEdit(viewTermUiState.term.id)
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit term"
-                )
-            }
-        },
         topBar = {
             TopAppBar(
                 title = { Text(text = "View term") },
@@ -57,6 +49,14 @@ fun ViewTermScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navigateToEdit(viewTermUiState.term.id) }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit"
                         )
                     }
                 }
@@ -69,19 +69,20 @@ fun ViewTermScreen(
                 .padding(innerPadding)
                 .padding(defaultOffset)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(defaultOffset)
-                    .weight(1f)
-            ) {
+            Text(
+                text = "Term id: ${viewTermUiState.term.id}"
+            )
+            Text(
+                text = "Term type: ${viewTermUiState.term.type}"
+            )
+            Text(
+                text = "${viewTermUiState.term.name}$separator${viewTermUiState.term.definition}"
+            )
+
+            if (viewModel.nextId != null) {
                 Text(
-                    text = "Term id: ${viewTermUiState.term.id}"
-                )
-                Text(
-                    text = "Term name: ${viewTermUiState.term.name}"
-                )
-                Text(
-                    text = "Term definition: ${viewTermUiState.term.definition}"
+                    text = "Go to next term",
+                    modifier = Modifier.clickable { navigateToNext(viewModel.nextId!!) }
                 )
             }
         }
