@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class EditTermViewModel(
     savedStateHandle: SavedStateHandle,
-    private val termDao: TermDao // why use private val, why not all the places of code can use it?
+    private val termDao: TermDao   // Why use private val, why not all the places of code can use it?
 ) : ViewModel() {
     private val stringTermId: String = checkNotNull(savedStateHandle["termId"])
     private val termId = stringTermId.toInt()

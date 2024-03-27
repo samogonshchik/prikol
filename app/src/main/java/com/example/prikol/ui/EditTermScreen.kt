@@ -24,8 +24,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.prikol.AppViewModelProvider
+import com.example.prikol.R
 import com.example.prikol.ui.theme.Purple80
 import com.example.prikol.ui.viewModels.EditTermViewModel
 import kotlinx.coroutines.launch
@@ -52,29 +55,27 @@ fun EditTermScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Done,
-                    contentDescription = "Done"
+                    contentDescription = stringResource(R.string.ConfirmEditing_FAB_descr)
                 )
             }
         },
         topBar = {
             TopAppBar(
-                title = { Text(text = "Edit term") },
+                title = { Text(text = stringResource(R.string.EditTermScreen_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Purple80),
                 navigationIcon = {
                     IconButton(onClick = { navigateBack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.NavigateBack_Button_descr)
                         )
                     }
                 },
                 actions = {
-//                    var menuExpanded: Boolean by remember { mutableStateOf(false) }
-
                     IconButton(onClick = { deleteRequested = true }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "More"
+                            contentDescription = stringResource(R.string.Delete_Button_descr)
                         )
                     }
                 }
@@ -84,7 +85,7 @@ fun EditTermScreen(
         EnterTermForm(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(defaultOffset)
+                .padding(dimensionResource(R.dimen.default_offset))
                 .verticalScroll(rememberScrollState()),
             termInfo = viewModel.termUiState.termInfo,
             updateTermInfo = viewModel::updateUiState
@@ -94,14 +95,14 @@ fun EditTermScreen(
             AlertDialog(
                 onDismissRequest = { deleteRequested = false },
                 title = { Text(text = "Term deleting") },
-                text = { Text("Are u sure?") },
+                text = { Text("Are you sure?") },
                 confirmButton = {
                     TextButton(
                         onClick = {
                             deleteRequested = false
                             navigateHome()
                             coroutineScope.launch {
-//                                delay(7_000L) // why tasks listed below won't be executed after delay?
+//                                delay(1_000L) // why tasks listed below won't be executed after delay?
                                 viewModel.deleteTerm()
                             }
                         }

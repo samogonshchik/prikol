@@ -14,6 +14,7 @@ import com.example.prikol.ui.viewModels.ViewTermViewModel
 /**
  * Provides Factory to create instance of ViewModel for the entire Inventory app
  */
+
 object AppViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
@@ -45,5 +46,6 @@ object AppViewModelProvider {
  * Extension function to queries for [Application] object and returns an instance of
  * [PrikolApplication].
  */
+
 fun CreationExtras.prikolApplication(): PrikolApplication =
     (this[AndroidViewModelFactory.APPLICATION_KEY] as PrikolApplication)

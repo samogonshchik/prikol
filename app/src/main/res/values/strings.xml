@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">Prikol</string>
+    <string name="main_database_name">prikol_database</string>
+    <string name="terms_table_name">terms_table</string>
+
+    <string name="HomeScreen_title">Terms overview</string>
+    <string name="Edit_Mode_title">Editing terms</string>
+    <string name="AddTermScreen_title">Add term</string>
+    <string name="ViewTermsScreen_title">View term</string>
+    <string name="EditTermScreen_title">Edit term</string>
+
+    <string name="Options_Button_descr">Expand options menu</string>
+    <string name="NavigateBack_Button_descr">Navigate back</string>
+    <string name="GoToEdit_Button_descr">Go to edit term screen</string>
+    <string name="Delete_Button_descr">Delete terms(s)</string>
+    <string name="SwitchMode_Button_descr">Go back to default mode</string>
+
+    <string name="SwapTerms_FAB_descr">Swap selected terms</string>
+    <string name="GoToAdd_FAB_descr">Go to add terms screen</string>
+    <string name="AddTerm_FAB_descr">Add entered term</string>
+    <string name="ConfirmEditing_FAB_descr">Confirm term editing</string>
 </resources>

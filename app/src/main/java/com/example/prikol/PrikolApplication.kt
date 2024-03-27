@@ -10,6 +10,7 @@ class PrikolApplication : Application() {
     /**
      * AppContainer instance used by the rest of classes to obtain dependencies
      */
+
     lateinit var container: AppDataContainer
 
     override fun onCreate() {

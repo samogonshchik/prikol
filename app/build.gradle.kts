@@ -77,6 +77,12 @@ dependencies {
     // Testing
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
+
+    // Accompanist
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    implementation("com.google.accompanist:accompanist-webview:0.31.3-beta")
+
+//    implementation("com.android.support:support-v4:28.0.0")
 }
 
 // mixed from old and new

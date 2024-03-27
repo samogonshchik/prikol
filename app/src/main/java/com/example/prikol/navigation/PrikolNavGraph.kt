@@ -3,20 +3,21 @@ package com.example.prikol.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.prikol.ui.AddTermScreen
 import com.example.prikol.ui.EditTermScreen
 import com.example.prikol.ui.HomeScreen
 import com.example.prikol.ui.ViewTermScreen
 
-//enum class TermsViewScreens(@StringRes val routeName: Int) {
-//enum class TermsAppScreens(val routeName: String) {
-//    Overview(routeName = "overview"),
-//    Add(routeName = "add"),
-//    View(routeName = "view"),
-//    Edit(routeName = "edit")
-//}
+enum class PrikolScreens() {
+    Overview,
+    Add,
+    View,
+    Edit
+}
 
 @Composable
 fun PrikolNavHost(
@@ -25,41 +26,46 @@ fun PrikolNavHost(
 ) {
 //    val context: Context = LocalContext.current.applicationContext
 //    val repository: TermsRepository by lazy {
-//        TermsRepository(TermDatabase.getDatabase(context).termDao()) // why does it slows app so much?
-//    } // probably because viewModels's uiStates or smth else initiated every time navigation is running
+//        TermsRepository(TermDatabase.getDatabase(context).termDao())   // Why does it slows app so much?
+//    }   // ViewModels's uiStates or else initialized every time navigation is running?
 
     NavHost(
         navController = navController,
-        startDestination = "home",
+        startDestination = PrikolScreens.Overview.name,
         modifier = modifier
     ) {
-        composable(route = "home") {
+        composable(route = PrikolScreens.Overview.name) {
             HomeScreen(
-                navigateToAdd = { navController.navigate("add") },
-                navigateToView = { navController.navigate("viewTerm/$it") }
+                navigateToAdd = { navController.navigate(PrikolScreens.Add.name) },
+                navigateToView = { navController.navigate("${PrikolScreens.View.name}/$it") }
                 )
         }
-        composable(route = "add") {
+        composable(route = PrikolScreens.Add.name) {
             AddTermScreen(
                 navigateBack = { navController.popBackStack() }
             )
         }
-        composable(route = "viewTerm/{termId}", // Why and how it works
-//            arguments = listOf(navArgument("termId"))
-            ) {
+        composable(
+            route = "${PrikolScreens.View.name}/{termId}",   // Why and how it works
+            arguments = listOf(navArgument("termId") { type = NavType.StringType })
+        ) {
             ViewTermScreen(
                 navigateBack = { navController.popBackStack() },
-                navigateToEdit = { navController.navigate("editTerm/$it") },
-                navigateToNext = {
+                navigateToEdit = { navController.navigate("${PrikolScreens.Edit.name}/$it") },
+                navigateToView = { navController.navigate("${PrikolScreens.View.name}/$it") },
+                navigateToNearest = {
                     navController.popBackStack()
-                    navController.navigate("viewTerm/$it")
+                    navController.navigate("${PrikolScreens.View.name}/$it")
                 }
             )
         }
-        composable(route = "editTerm/{termId}") {
+        composable(
+            route = "${PrikolScreens.Edit.name}/{termId}",
+            arguments = listOf(navArgument("termId") { type = NavType.StringType })
+        ) {
             EditTermScreen(
                 navigateBack = { navController.popBackStack() },
-                navigateHome = { navController.popBackStack("home", inclusive = false) }
+                navigateHome = { navController.popBackStack(PrikolScreens.Overview.name, inclusive = false) }
             )
         }
     }

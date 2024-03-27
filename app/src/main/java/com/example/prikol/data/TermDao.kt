@@ -19,6 +19,9 @@ interface TermDao {
     @Delete
     suspend fun delete(term: Term)
 
+    @Query("DELETE FROM terms_table")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM terms_table WHERE id = :id")
     fun getTermStream(id: Int): Flow<Term>
 
@@ -31,9 +34,15 @@ interface TermDao {
     @Query("SELECT name FROM terms_table")
     fun getAllNamesStream(): Flow<List<String>>
 
-    @Query("DELETE FROM terms_table")
-    suspend fun deleteAll()
+    @Query("SELECT * FROM terms_table WHERE id = :id")
+    suspend fun getTerm(id: Int): Term
+
+    @Query("SELECT * FROM terms_table WHERE name = :name")
+    suspend fun getTerm(name: String): Term
 
     @Query("SELECT MIN(id) FROM terms_table WHERE id > :id")
     suspend fun getNextId(id: Int): Int?
+
+    @Query("SELECT MAX(id) FROM terms_table WHERE id < :id")
+    suspend fun getPrevId(id: Int): Int?
 }
