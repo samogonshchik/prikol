@@ -7,6 +7,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.prikol.TestScreen
 import com.example.prikol.ui.AddTermScreen
 import com.example.prikol.ui.EditTermScreen
 import com.example.prikol.ui.HomeScreen
@@ -16,7 +17,8 @@ enum class PrikolScreens() {
     Overview,
     Add,
     View,
-    Edit
+    Edit,
+    Test
 }
 
 @Composable
@@ -26,19 +28,21 @@ fun PrikolNavHost(
 ) {
 //    val context: Context = LocalContext.current.applicationContext
 //    val repository: TermsRepository by lazy {
-//        TermsRepository(TermDatabase.getDatabase(context).termDao())   // Why does it slows app so much?
+//        TermsRepository(TermDatabase.getDatabase(context).termDao())   // Why slows app so much?
 //    }   // ViewModels's uiStates or else initialized every time navigation is running?
 
     NavHost(
         navController = navController,
         startDestination = PrikolScreens.Overview.name,
+//        startDestination = PrikolScreens.Test.name,
         modifier = modifier
     ) {
         composable(route = PrikolScreens.Overview.name) {
             HomeScreen(
                 navigateToAdd = { navController.navigate(PrikolScreens.Add.name) },
-                navigateToView = { navController.navigate("${PrikolScreens.View.name}/$it") }
-                )
+                navigateToView = { navController.navigate("${PrikolScreens.View.name}/$it") },
+                navigateToTest = { navController.navigate(PrikolScreens.Test.name) }
+            )
         }
         composable(route = PrikolScreens.Add.name) {
             AddTermScreen(
@@ -66,6 +70,11 @@ fun PrikolNavHost(
             EditTermScreen(
                 navigateBack = { navController.popBackStack() },
                 navigateHome = { navController.popBackStack(PrikolScreens.Overview.name, inclusive = false) }
+            )
+        }
+        composable(route = PrikolScreens.Test.name) {
+            TestScreen(
+                navigateHome = { navController.navigate(PrikolScreens.Overview.name) }
             )
         }
     }

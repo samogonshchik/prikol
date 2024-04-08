@@ -83,6 +83,7 @@ val TAG = "TEST"
 fun HomeScreen(
     navigateToAdd: () -> Unit = {  },
     navigateToView: (Int) -> Unit = {  },
+    navigateToTest: () -> Unit = {  },
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     var isInSelectionMode by remember { mutableStateOf(false) }
@@ -234,6 +235,13 @@ fun HomeScreen(
                                 }
                             )
                             DropdownMenuItem(
+                                text = { Text(text = "Go to test screen") },
+                                onClick = {
+                                    navigateToTest()
+                                    optionsMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
                                 text = { Text(text = "test append") },
                                 onClick = {
                                     coroutineScope.launch {
@@ -315,6 +323,7 @@ fun TermToDisplay(
     isSelected: Boolean = false
 ) {
     val defaultOffset = dimensionResource(R.dimen.default_offset)
+
     Card(
         shape = if (term.type != "Paragraph") RectangleShape else CardDefaults.shape,   // Put Card in "when" construction?
         colors = CardDefaults.cardColors(containerColor = if (isSelected) Purple80 else Color(0xFFFFFBFE)),

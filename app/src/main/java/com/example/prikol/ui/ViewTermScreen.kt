@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -38,10 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.prikol.AppViewModelProvider
 import com.example.prikol.R
+import com.example.prikol.ui.katex.Katex
 import com.example.prikol.ui.theme.Purple80
 import com.example.prikol.ui.viewModels.ViewTermViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ViewTermScreen(
     navigateBack: () -> Unit = {  },
@@ -51,6 +54,7 @@ fun ViewTermScreen(
     viewModel: ViewTermViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val viewTermUiState by viewModel.viewTermUiState.collectAsState()
+//    val context = LocalContext.current
     val defaultOffset = dimensionResource(R.dimen.default_offset)
 
     Scaffold(
@@ -77,56 +81,13 @@ fun ViewTermScreen(
             )
         }
     ) { innerPadding ->
+        val names: List<String> by viewModel.allNames.collectAsState()
+        val definitionParts = viewTermUiState.term.definition.split("\$")
+
         val separator = when (viewTermUiState.term.type) {
             "Term" -> " — "
             "Theorem" -> ":\n"
             else -> "\n"
-        }
-
-        val definition: String = viewTermUiState.term.definition
-        val definitionWords: List<String> = definition.split(Regex("""[ ,.:;]+"""))
-        val delimiters: List<String> = definition.split(Regex("""\w+""")).drop(1)
-        val names: List<String> by viewModel.allNames.collectAsState()
-        val namesWords: List<List<String>> = names.map { name ->
-            name.split(" ").map { word ->
-                word.lowercase()
-            }
-        }
-
-        val annotatedDefinition = buildAnnotatedString {   // Delegate to viewTermViewModel or new function
-            append("Clickable definition:\n")
-            var i = 0
-            var j = 0
-            val end = delimiters.size   // delimiters.size - 1 == definitionWords.size, but use of second causes error (before using .drop(1))
-            while (i < end) {
-                while (j < names.size) {
-                    val nameLen = namesWords[j].size
-                    if (i + nameLen <= end) {
-                        if (definitionWords.slice(i until i + nameLen).map { it.lowercase() } == namesWords[j].map { it.lowercase() }) {
-                            pushStringAnnotation(tag = "term", annotation = viewModel.getTermIdStream(names[j]).collectAsState().value.id.toString())
-                            withStyle(SpanStyle(color = Color.Blue, textDecoration = TextDecoration.Underline)) {
-                                for (k in 0 until nameLen - 1) {
-                                    append(definitionWords[i + k])
-                                    append(delimiters[i + k])
-                                }
-                                append(definitionWords[i + nameLen - 1])
-                            }
-                            pop()
-                            append(delimiters[i + nameLen - 1])
-                            i += nameLen
-                            break
-                        }
-                    }
-                    j++
-                }
-                if (j == names.size) {
-                    append(definitionWords[i])
-                    append(delimiters[i])
-                    i++
-                }
-                j = 0
-            }
-            toAnnotatedString()
         }
 
         Column(
@@ -138,16 +99,26 @@ fun ViewTermScreen(
         ) {
             Text(text = "Term id: ${viewTermUiState.term.id}")
             Text(text = "Term type: ${viewTermUiState.term.type}")
-            Text(text = "${viewTermUiState.term.name}$separator${viewTermUiState.term.definition}")
-            ClickableText(
-                text = annotatedDefinition,
-                style = LocalTextStyle.current,
-                onClick = { offset ->
-                    if (annotatedDefinition.getStringAnnotations(tag = "term", start = offset, end = offset).firstOrNull() != null) {
-                        navigateToView(annotatedDefinition.getStringAnnotations(tag = "term", start = offset, end = offset).firstOrNull()?.item?.toInt()!!)
+
+            // Main content
+            FlowRow {
+                Text(viewTermUiState.term.name + separator)
+                definitionParts.mapIndexed { index, textPart ->
+                    if (textPart.isNotBlank()) {
+                        if (index % 2 == 1 && index != definitionParts.size)
+                            Katex(textPart)   //, context = context)
+                        else splitTextIntoParts(
+                            text = textPart,
+                            names = names,
+                            textModifier = Modifier,   // .align(Alignment.Bottom),
+                            navigateToView = navigateToView,
+                            viewModel = viewModel
+                        ).forEach { it }
                     }
                 }
-            )
+            }
+
+            // "Prev" and "Next" buttons
             Row(
                 horizontalArrangement = Arrangement.spacedBy(defaultOffset)
             ) {
@@ -182,4 +153,74 @@ fun ViewTermScreen(
             }
         }
     }
+}
+
+@Composable
+fun splitTextIntoParts(
+    text: String,
+    names: List<String>,
+    textModifier: Modifier,
+    navigateToView: (Int) -> Unit,
+    viewModel: ViewTermViewModel
+): List<Unit> {
+//    val coroutineScope = rememberCoroutineScope()
+
+    var textParts = mutableListOf<Unit>()
+    val definitionWords: List<String> = Regex("""\w+""").findAll(text).map { it.value }.toList()
+    val namesWords: List<List<String>> = names.map { name ->
+        name.split(" ").map { word ->
+            word.lowercase()
+        }
+    }
+    val delimiters: List<String> = text.split(Regex("""\w+""")).let {
+        if (it[0].isNotBlank()) textParts.add(Text(it[0]))
+        it.drop(1)
+    }
+
+    var i = 0
+    var j = 0
+    val end = delimiters.size   // delimiters.size - 1 == definitionWords.size, but use of second causes error (before using .drop(1))
+    while (i < end) {
+        while (j < names.size) {
+            val nameLen = namesWords[j].size
+            if (i + nameLen <= end) {
+                if (definitionWords.slice(i until i + nameLen).map { it.lowercase() } == namesWords[j].map { it.lowercase() }) {
+                    val clickableText = buildAnnotatedString {
+                        withStyle(SpanStyle(color = Color.Blue, textDecoration = TextDecoration.Underline)) {
+                            for (k in 0 until nameLen - 1) {
+                                append(definitionWords[i + k])
+                                append(delimiters[i + k])
+                            }
+                            append(definitionWords[i + (nameLen - 1)])
+                        }
+                        append(delimiters[i + (nameLen - 1)])
+                        toAnnotatedString()
+                    }
+                    val id = viewModel.getTermIdStream(names[j]).collectAsState().value.id
+
+                    textParts.add(
+                        ClickableText(
+                            text = clickableText,
+                            style = LocalTextStyle.current,
+                            onClick = {
+                                navigateToView(id)
+                            },
+                            modifier = textModifier
+                        )
+                    )
+
+                    i += nameLen
+                    break
+                }
+            }
+            j++
+        }
+        if (j == names.size) {
+            textParts.add(Text(definitionWords[i] + delimiters[i]))
+            i++
+        }
+        j = 0
+    }
+
+    return textParts
 }
