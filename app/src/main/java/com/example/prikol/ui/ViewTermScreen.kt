@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.ClickableText
@@ -54,7 +56,6 @@ fun ViewTermScreen(
     viewModel: ViewTermViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val viewTermUiState by viewModel.viewTermUiState.collectAsState()
-//    val context = LocalContext.current
     val defaultOffset = dimensionResource(R.dimen.default_offset)
 
     Scaffold(
@@ -81,15 +82,6 @@ fun ViewTermScreen(
             )
         }
     ) { innerPadding ->
-        val names: List<String> by viewModel.allNames.collectAsState()
-        val definitionParts = viewTermUiState.term.definition.split("\$")
-
-        val separator = when (viewTermUiState.term.type) {
-            "Term" -> " — "
-            "Theorem" -> ":\n"
-            else -> "\n"
-        }
-
         Column(
             verticalArrangement = Arrangement.spacedBy(defaultOffset),
             modifier = Modifier
@@ -97,23 +89,68 @@ fun ViewTermScreen(
                 .padding(defaultOffset)
                 .verticalScroll(rememberScrollState())
         ) {
-            Text(text = "Term id: ${viewTermUiState.term.id}")
-            Text(text = "Term type: ${viewTermUiState.term.type}")
+//            Text(text = "Term id: ${viewTermUiState.term.id}")
+//            Text(text = "Term type: ${viewTermUiState.term.type}")
 
             // Main content
-            FlowRow {
-                Text(viewTermUiState.term.name + separator)
-                definitionParts.mapIndexed { index, textPart ->
-                    if (textPart.isNotBlank()) {
-                        if (index % 2 == 1 && index != definitionParts.size)
-                            Katex(textPart)   //, context = context)
-                        else splitTextIntoParts(
-                            text = textPart,
+            val names: List<String> by viewModel.allNames.collectAsState()
+
+            val splitText = splitNMerge(
+                string = viewTermUiState.term.definition,
+                regex = Regex("\\\$\\\$([^\\\$]+)\\\$\\\$"),
+                processOuter = { notDisplayModeKatex ->
+                    splitNMerge(
+                        string = notDisplayModeKatex,
+                        regex = Regex("\\\$([^\\\$]+)\\\$"),
+                        processOuter = { notKatex ->
+                            splitNMerge(
+                                string = notKatex,
+                                regex = Regex("\\n+"),
+                                processOuter = { listOf(it) }
+                            )
+                        }
+                    )
+                }
+            )
+
+            // Main content
+            FlowRow (
+                modifier = Modifier
+            ) {
+                if (viewTermUiState.term.type == "Term") Text("    ")
+                splitTextIntoParts(
+                    text = viewTermUiState.term.name,
+                    names = listOf(),
+                    navigateToView = {  },
+                    viewModel = viewModel
+                )
+                when (viewTermUiState.term.type) {
+                    "Term" -> Text(" — ")
+                    "Theorem" -> {
+                        Text(":")
+                        Spacer(modifier = Modifier.fillMaxWidth())
+                    }
+                    else -> Spacer(modifier = Modifier.fillMaxWidth())
+                }
+                splitText.forEach {
+                    if (Regex("\\\$\\\$([^\\\$]+)\\\$\\\$") matches it) {
+                        Spacer(modifier = Modifier.fillMaxWidth())
+                        Katex(it.trim('\$'), displayMode = true)
+                        Spacer(modifier = Modifier.fillMaxWidth())
+                    } else if(Regex("\\\$([^\\\$]+)\\\$") matches it) {
+                        Katex(it.trim('\$'))
+                    } else if(Regex("\\n+") matches it) {
+                        newlinesToComposables(it).forEach { newline ->
+                            newline
+                        }
+                    } else {
+                        splitTextIntoParts(text = it,
                             names = names,
-                            textModifier = Modifier,   // .align(Alignment.Bottom),
                             navigateToView = navigateToView,
                             viewModel = viewModel
-                        ).forEach { it }
+                        ).forEach { word ->
+                            word
+                        }
                     }
                 }
             }
@@ -159,13 +196,21 @@ fun ViewTermScreen(
 fun splitTextIntoParts(
     text: String,
     names: List<String>,
-    textModifier: Modifier,
     navigateToView: (Int) -> Unit,
-    viewModel: ViewTermViewModel
+    viewModel: ViewTermViewModel,
+    textModifier: Modifier = Modifier,
+    toSearch: Boolean = true
 ): List<Unit> {
 //    val coroutineScope = rememberCoroutineScope()
+    val textParts = mutableListOf<Unit>()
 
-    var textParts = mutableListOf<Unit>()
+    if (!toSearch) {
+        Regex("""\w+""").findAll(text).forEach {
+            textParts.add(Text(it.value))
+        }
+        return textParts
+    }
+
     val definitionWords: List<String> = Regex("""\w+""").findAll(text).map { it.value }.toList()
     val namesWords: List<List<String>> = names.map { name ->
         name.split(" ").map { word ->
@@ -173,7 +218,7 @@ fun splitTextIntoParts(
         }
     }
     val delimiters: List<String> = text.split(Regex("""\w+""")).let {
-        if (it[0].isNotBlank()) textParts.add(Text(it[0]))
+        if (it[0] != "") textParts.add(Text(it[0]))
         it.drop(1)
     }
 
@@ -216,11 +261,68 @@ fun splitTextIntoParts(
             j++
         }
         if (j == names.size) {
-            textParts.add(Text(definitionWords[i] + delimiters[i]))
+            textParts.add(
+                Text(
+                    text = definitionWords[i] + delimiters[i],
+//                    modifier = Modifier.border(BorderStroke(1.dp, Color.Blue))
+                )
+            )
             i++
         }
         j = 0
     }
 
     return textParts
+}
+
+fun mergeLists(outerList: List<List<String>>, innerList: List<String>): List<String> {
+    val resultList: MutableList<String> = mutableListOf()
+    if (outerList.size - 1 == innerList.size) {
+        for (i in outerList.dropLast(1).indices) {
+            outerList[i].forEach {
+                resultList.add(it)
+            }
+            resultList.add(innerList[i])
+        }
+        outerList.last().forEach {
+            resultList.add(it)
+        }
+    }
+//    Log.e("TEST", "merged from ${outerList.size} and ${innerList.size} to ${resultList.size}")
+    return resultList
+}
+
+@Composable
+fun newlinesToComposables(s: String): List<Unit> {
+    val resultList: MutableList<Unit> = mutableListOf(Spacer(modifier = Modifier.fillMaxWidth()))
+    if (Regex("""\n+""").matches(s)) {
+        for (i in s.dropLast(1).indices) {
+            resultList.add(
+                Text("", modifier = Modifier
+                    .fillMaxWidth()
+                )
+            )
+        }
+    }
+    return resultList
+}
+
+fun splitNMerge(
+    string: String,
+    regex: Regex,
+    processOuter: (String) -> List<String>,
+): List<String> {
+    val outerList = string.split(regex)
+    val innerList = regex.findAll(string).map { it.value }
+    val newInnerList = mutableListOf<String>()
+    val newOuterList = mutableListOf<List<String>>()
+
+    outerList.forEach {
+        newOuterList.add(processOuter(it))
+    }
+    innerList.forEach {
+        newInnerList.add(it)
+    }
+
+    return mergeLists(newOuterList, newInnerList)
 }

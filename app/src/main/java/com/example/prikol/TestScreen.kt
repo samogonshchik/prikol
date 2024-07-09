@@ -1,7 +1,13 @@
 package com.example.prikol
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -16,10 +22,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.example.prikol.ui.katex.Katex
 import com.example.prikol.ui.theme.Purple80
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TestScreen(
     navigateHome: () -> Unit = {  },
@@ -57,15 +65,13 @@ fun TestScreen(
             )
         }
     ) { innerPadding ->
-//        val latexString = """M(1, \frac{y}{x^k}) h \dfrac{1}{x^m}M(x,y)"""
-        val katexString = """d = \\ \int \frac{sin(x)}{2} \cdot dx"""
+        val testString = """\\nobreak d = \\ \int \frac{sin(x)}{2} \cdot dx"""
 
         Column(
             modifier = Modifier.padding(innerPadding)
         ) {
             Text("Katex display mode:")
-            Katex(katexString, displayMode = true)
+            Katex(testString)
         }
     }
 }
-

@@ -83,12 +83,11 @@ fun EditTermScreen(
         }
     ) { innerPadding ->
         EnterTermForm(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(dimensionResource(R.dimen.default_offset))
-                .verticalScroll(rememberScrollState()),
             termInfo = viewModel.termUiState.termInfo,
-            updateTermInfo = viewModel::updateUiState
+            updateTermInfo = viewModel::updateUiState,
+            innerPadding = innerPadding,
+            modifier = Modifier
+                .padding(dimensionResource(R.dimen.default_offset)),
         )
 
         if (deleteRequested) {

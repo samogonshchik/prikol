@@ -2,12 +2,11 @@ package com.example.prikol.ui.katex
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,71 +19,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 
 class KatexView(context: Context) : WebView(context) {
-    // Align content somehow?
-    private val oldPageTemplate = """
+    private val displayModePageTemplate = """
         <!DOCTYPE html>
-        <html id="main">
-          <head>
-            <meta charset="UTF-8">
-            <link rel="stylesheet" type="text/css" href="file:///android_asset/katex/katex.min.css">
-            <!--<link rel="stylesheet" type="text/css" href="file:///android_asset/themes/style.css">-->
-            <script type="text/javascript" src="file:///android_asset/katex/katex.min.js"></script>
-            <script type="text/javascript" src="file:///android_asset/katex/contrib/auto-render.min.js"></script>
-            <!--<script type="text/javascript" src="file:///android_asset/katex/contrib/auto-render.js"></script>-->
-            <script type="text/javascript" src="file:///android_asset/jquery.min.js"></script>
-            <script type="text/javascript" src="file:///android_asset/latex_parser.js"></script>
-            <!--<link rel="stylesheet" href="file:///android_asset/webviewstyle.css"/>-->
-            <meta name="viewport" content="width=device-width"/>
-            <style type='text/css'>
-              body {
-                margin: 0;
-                -webkit-touch-callout: none!important;
-                -webkit-user-select: none!important;
-                user-select: none!important;
-              }
-              #main {
-                border: 2px solid blue;
-              }
-              #latex {
-                border: 2px dashed red;
-                font-size: 14px;
-                display: inline-block;
-              }
-             </style>
-          </head>
-          <div>
-            <div id="latex">{formula}</div>
-          </div>
-          <script>
-            const latex = document.getElementById("latex");
-            const html = document.getElementById("main");
+        <html>
+            <head>
+                <link rel="stylesheet" type="text/css" href="file:///android_asset/katex/katex.min.css">
+                <script type="text/javascript" src="file:///android_asset/katex/katex.min.js"></script>
+                
+                <style type='text/css'>
+                    html {
+                           <!-- border: 2px solid blue; -->
+                    }
+                    #katexContent {
+                           <!-- border: 2px dashed red; -->
+                        font-size: 14px;
+                        padding: 2px;   <!--  to display fracs that went off border? -->
+                    }
+                    #test {
+                        border: 2px dashed red;
+                    }
+                    body {
+                        margin: 0;   <!-- behaves like padding? --> 
+                    }
+                </style>
+            </head>
             
-            delayedRefresh()
-            
-            function setActualValues() {
-              html.style.width = getLaTeXWidth() + "px";
-              html.style.height = getLaTeXHeight() + "px";
-            }
-            
-            function sendActualValues() {
-              JSBridge.sendValues(getLaTeXWidth() + " " + getLaTeXHeight());
-            }
-            
-            function getLaTeXWidth() {
-              return document.getElementById("latex").offsetWidth
-            }
-            
-            function getLaTeXHeight() {
-              return document.getElementById("latex").offsetHeight
-            }
-            
-            function delayedRefresh() {
-              setTimeout(function() {
-                setActualValues();
-                sendActualValues();
-              }, 300);
-            }
-          </script>
+            <body>
+                <div id="katexContent" class="content"></div>
+            </body>
+          
+            <script>
+                const katexContent = document.getElementById("katexContent");
+                const html = document.getElementsByTagName("html")[0];
+
+                katex.render(String.raw`{codeToRender}`, katexContent, {
+                    displayMode: {isInDisplayMode},
+                    macros: {
+                        "": ""
+                    },
+                    throwOnError: false
+                });
+            </script>
         </html>
     """
     private val pageTemplate: String = """
@@ -149,8 +124,7 @@ class KatexView(context: Context) : WebView(context) {
     """
 
     fun loadText(codeToRender: String, displayMode: Boolean = false, testMode: Boolean = false) {
-        val data: String = if (testMode) oldPageTemplate.replace("{formula}", codeToRender)
-            else pageTemplate.replace("{codeToRender}", codeToRender).replace("{isInDisplayMode}", "$displayMode")
+        val data: String = (if (displayMode) displayModePageTemplate else pageTemplate).replace("{codeToRender}", codeToRender).replace("{isInDisplayMode}", "$displayMode")
 
         loadDataWithBaseURL("null", data, "text/html", "UTF-8", "null")
     }
@@ -160,6 +134,9 @@ class KatexView(context: Context) : WebView(context) {
         setLayerType(LAYER_TYPE_HARDWARE, null)   // Who are you, warrior?
         settings.javaScriptEnabled = true
         settings.allowFileAccess = true
+
+        isVerticalScrollBarEnabled = false
+        isHorizontalScrollBarEnabled = false
     }
 
     init {
@@ -168,42 +145,41 @@ class KatexView(context: Context) : WebView(context) {
 }
 
 class JSBridge(
-    private val onValueRecieve: (Int, Int, Int) -> Unit = { w, h, k -> }
+    private val onValueReceive: (Int, Int, Int) -> Unit = { w, h, k -> }
 ) {
     @JavascriptInterface
     fun sendValues(s: String) {
-        Log.d("JSBridge", s)
+//        Log.d("JSBridge", s)
 
         val sSplit = s.split(" ")
         val last = sSplit.lastIndex
         val vals = listOf(sSplit[last - 2], sSplit[last - 1], sSplit[last]).map { it.toInt() }
 
-        onValueRecieve(vals[0], vals[1], vals[2])
+        onValueReceive(vals[0], vals[1], vals[2])
     }
 }
 
 @Composable
 fun Katex(
     codeToRender: String,
-//    context: Context,
     displayMode: Boolean = false,
     testMode: Boolean = false,
 //    modifier: Modifier
 ) {
     val katexView = KatexView(LocalContext.current)
-    var myModifier by remember { mutableStateOf(Modifier.border(BorderStroke(1.dp, Color.Black))) }
+    var myModifier by remember { mutableStateOf(Modifier.border(BorderStroke(-1.dp, Color.Black))) }
 
-    katexView.addJavascriptInterface(JSBridge(onValueRecieve = { w, h, k -> myModifier = Modifier.width(w.dp).border(
-        BorderStroke(1.dp, Color.Black)
-    ) }), "JSBridge")
+//    katexView.addJavascriptInterface(JSBridge(onValueReceive = { w, h, k -> myModifier = Modifier.width(w.dp)
+    if (!testMode) katexView.addJavascriptInterface(JSBridge(onValueReceive = { w, h, k -> myModifier = Modifier.size(w.dp, h.dp) }), "JSBridge")
 
     AndroidView(
         factory = {
             katexView.loadText(codeToRender, displayMode, testMode)
             katexView
         },
-        update = {  },
+        update = {
+            it.loadText(codeToRender, displayMode, testMode)
+        },
         modifier = myModifier
     )
 }
-

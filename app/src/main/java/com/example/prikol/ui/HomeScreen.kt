@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,6 +62,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.FileProvider
@@ -337,12 +340,27 @@ fun TermToDisplay(
                 onLongClick = onLongClick
             )
     ) {
-        Text(
-            text = if (term.type == "Paragraph") term.name + ". " + term.definition else term.name,
-            fontSize = if (term.type == "Paragraph") LocalTextStyle.current.fontSize * 1.2 else LocalTextStyle.current.fontSize,
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(defaultOffset),
             modifier = Modifier
                 .padding(defaultOffset)
-        )
+        ) {
+            Text(
+                text = when (term.type) {
+                    "Theorem" -> "Lw"
+                    "Term" -> "Df"
+                    "Paragraph" -> "§"
+                    else -> ""
+                },
+                fontSize = if (term.type == "Paragraph") LocalTextStyle.current.fontSize * 1.2 else LocalTextStyle.current.fontSize,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (term.type == "Paragraph") term.name + ". " + term.definition else term.name,
+                fontSize = if (term.type == "Paragraph") LocalTextStyle.current.fontSize * 1.2 else LocalTextStyle.current.fontSize,
+                fontStyle = FontStyle.Italic
+            )
+        }
     }
 }
 

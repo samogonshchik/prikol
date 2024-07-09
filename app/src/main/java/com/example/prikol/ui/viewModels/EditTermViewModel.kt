@@ -44,6 +44,6 @@ class EditTermViewModel(
 fun Term.toTermInfo() = TermInfo(
     id = id,
     type = type,
-    name = name,
-    definition = definition
+    nameText = name,
+    definitionText = definition
 )
