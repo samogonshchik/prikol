@@ -6,6 +6,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 //    id("com.google.devtools.ksp") version "1.8.21-1.0.11" // old
     id("com.google.devtools.ksp") version "1.9.22-1.0.16" // new
+
+    id("com.chaquo.python")
 }
 
 android {
@@ -21,6 +23,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+
+        ndk {
+            // On Apple silicon, you can omit x86_64.
+            abiFilters += listOf("arm64-v8a", "x86_64")
         }
     }
 
@@ -53,6 +60,17 @@ android {
         }
     }
     namespace = "com.example.prikol"
+}
+
+// choco
+chaquopy {
+    defaultConfig {
+        version = "3.12"
+        pip {
+            install("numpy")
+            install("tabulate")
+        }
+    }
 }
 
 dependencies {

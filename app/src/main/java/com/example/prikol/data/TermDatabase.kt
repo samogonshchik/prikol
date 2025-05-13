@@ -18,8 +18,7 @@ abstract class TermDatabase : RoomDatabase() {
         private var Instance: TermDatabase? = null
         fun getDatabase(context: Context): TermDatabase {
             return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, TermDatabase::class.java, getString(context, R.string.main_database_name)).setJournalMode(JournalMode.TRUNCATE)
-                    .fallbackToDestructiveMigration().build().also { Instance = it }
+                Room.databaseBuilder(context, TermDatabase::class.java, getString(context, R.string.main_database_name)).setJournalMode(JournalMode.TRUNCATE).fallbackToDestructiveMigration().build().also { Instance = it }
             }
         }
     }
