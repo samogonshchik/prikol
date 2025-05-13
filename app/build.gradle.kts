@@ -27,7 +27,7 @@ android {
 
         ndk {
             // On Apple silicon, you can omit x86_64.
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            abiFilters += listOf("arm64-v8a", "x86_64", "x86")
         }
     }
 
@@ -65,7 +65,10 @@ android {
 // choco
 chaquopy {
     defaultConfig {
-        version = "3.12"
+        buildPython("C:/soft/python38/python.exe")
+
+//        version = "3.12"
+
         pip {
             install("numpy")
             install("tabulate")
