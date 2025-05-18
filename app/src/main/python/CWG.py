@@ -4,10 +4,7 @@ from tabulate import tabulate
 from random import choices
 
 
-a = "spermaggeddon" + ''.join([str(x) for x in np.arange(5)])
-
-
-def gen_boards10(_type):
+def board_by_type(_type):
     boards = {
         0: [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -88,69 +85,69 @@ def gen_boards10(_type):
 class CrosswordBoard:
     def __init__(self, _layout=0, _size=(10, 10)):
         if _size == (10, 10):
-            puzzle = gen_boards10(_layout)
+            puzzle = board_by_type(_layout)
             self.size = _size
         else:
             raise Exception("unsupported size")
-        self.board = [[set(string.ascii_lowercase) if elem != 1 else '#' for elem in line] for line in puzzle]
-        self.previous_board = self.board
+        self.grid = [[set(string.ascii_lowercase) if elem != 1 else '#' for elem in line] for line in puzzle]
+        self.previous_grid = self.grid
         self.clues = {"hor": dict(), "vert": dict()}
-        self.start_cells = {"hor": dict(), "vert": dict()}  # hor/vert -> (i,j) -> [cells for that word]
+        self.word_cells = {"hor": dict(), "vert": dict()}  # hor/vert -> (i,j) -> [cells for that word]
         self.placed_words = []
-        self.get_start_cells()
+        self.get_word_cells()
 
     def __repr__(self):
-        table = [[" " if len(elem) > 1 else elem for elem in line] for line in self.board]
+        table = [[" " if len(elem) > 1 else elem for elem in line] for line in self.grid]
         return tabulate(table, tablefmt="simple_grid")
 
     def __getitem__(self, item):
-        return self.board.__getitem__(item)
+        return self.grid.__getitem__(item)
 
-    def get_start_cells(self):
+    def get_word_cells(self):
         """
-        find all valid start cells and store in self.start_cells
+        find all valid start cells and store in self.word_cells
         :return: None
         """
         for i in range(self.size[0]):
             for j in range(self.size[1]):
-                if j == 0 and self.board[i][j] != '#':
-                    if (i, j) not in self.start_cells["hor"]:
-                        self.start_cells["hor"][(i, j)] = []
+                if j == 0 and self.grid[i][j] != '#':
+                    if (i, j) not in self.word_cells["hor"]:
+                        self.word_cells["hor"][(i, j)] = []
                         # self.clues["hor"][(i, j)] = ""
-                if j != 0 and self.board[i][j - 1] == '#' and self.board[i][j] != '#':
-                    if (i, j) not in self.start_cells["hor"]:
-                        self.start_cells["hor"][(i, j)] = []
+                if j != 0 and self.grid[i][j - 1] == '#' and self.grid[i][j] != '#':
+                    if (i, j) not in self.word_cells["hor"]:
+                        self.word_cells["hor"][(i, j)] = []
                         # self.clues["hor"][(i, j)] = ""
 
-                if i == 0 and self.board[i][j] != '#':
-                    if (i, j) not in self.start_cells["vert"]:
-                        self.start_cells["vert"][(i, j)] = []
+                if i == 0 and self.grid[i][j] != '#':
+                    if (i, j) not in self.word_cells["vert"]:
+                        self.word_cells["vert"][(i, j)] = []
                         # self.clues["vert"][(i, j)] = ""
-                if i != 0 and self.board[i - 1][j] == '#' and self.board[i][j] != '#':
-                    if (i, j) not in self.start_cells["vert"]:
-                        self.start_cells["vert"][(i, j)] = []
+                if i != 0 and self.grid[i - 1][j] == '#' and self.grid[i][j] != '#':
+                    if (i, j) not in self.word_cells["vert"]:
+                        self.word_cells["vert"][(i, j)] = []
                         # self.clues["vert"][(i, j)] = ""
         short_words = []
-        for cell in self.start_cells["hor"].keys():
+        for cell in self.word_cells["hor"].keys():
             cur_i, cur_j = cell
-            while cur_j < self.size[1] and self.board[cur_i][cur_j] != '#':
-                self.start_cells["hor"][cell].append((cur_i, cur_j))
+            while cur_j < self.size[1] and self.grid[cur_i][cur_j] != '#':
+                self.word_cells["hor"][cell].append((cur_i, cur_j))
                 cur_j += 1
-            if len(self.start_cells["hor"][cell]) in [1, 2]:
+            if len(self.word_cells["hor"][cell]) in [1, 2]:
                 short_words.append(cell)
 
         for word in short_words:
-            del self.start_cells["hor"][word]
+            del self.word_cells["hor"][word]
         short_words = []
-        for cell in self.start_cells["vert"].keys():
+        for cell in self.word_cells["vert"].keys():
             cur_i, cur_j = cell
-            while cur_i < self.size[1] and self.board[cur_i][cur_j] != '#':
-                self.start_cells["vert"][cell].append((cur_i, cur_j))
+            while cur_i < self.size[1] and self.grid[cur_i][cur_j] != '#':
+                self.word_cells["vert"][cell].append((cur_i, cur_j))
                 cur_i += 1
-            if len(self.start_cells["vert"][cell]) in [1, 2]:
+            if len(self.word_cells["vert"][cell]) in [1, 2]:
                 short_words.append(cell)
         for word in short_words:
-            del self.start_cells["vert"][word]
+            del self.word_cells["vert"][word]
 
     def get_start(self, i, j):
         """
@@ -159,11 +156,11 @@ class CrosswordBoard:
         :return: start cell for cell with coords (i,j)
         """
         hor, vert = None, None
-        for key, value in self.start_cells["hor"].items():
+        for key, value in self.word_cells["hor"].items():
             if (i, j) in value:
                 hor = key
                 break
-        for key, value in self.start_cells["vert"].items():
+        for key, value in self.word_cells["vert"].items():
             if (i, j) in value:
                 vert = key
                 break
@@ -177,7 +174,7 @@ class CrosswordBoard:
         :return: list of words that could fit this start cell considering possible letters
         """
         words_sets = []
-        setup = [self.board[i][j] for (i, j) in self.start_cells[direction][start_cell]]
+        setup = [self.grid[i][j] for (i, j) in self.word_cells[direction][start_cell]]
         for i, ch_dict in vocab[len(setup)].items():  # pos
             pos_words = set()
             for ch, words in ch_dict.items():  # ch
@@ -199,16 +196,16 @@ class CrosswordBoard:
         :return: None
         """
         words = self.get_possible_words(start_cell, direction, vocab)
-        cells = self.start_cells[direction][start_cell]
+        cells = self.word_cells[direction][start_cell]
         for i in range(len(cells)):
             letters = set(np.unique([elem[i] for elem in words]))
-            cur_cell = self.board[cells[i][0]][cells[i][1]]
+            cur_cell = self.grid[cells[i][0]][cells[i][1]]
             if direction == 'hor':
                 if isinstance(cur_cell, set):
-                    self.board[cells[i][0]][cells[i][1]] = letters
+                    self.grid[cells[i][0]][cells[i][1]] = letters
             else:
                 if isinstance(cur_cell, set):
-                    self.board[cells[i][0]][cells[i][1]] |= letters
+                    self.grid[cells[i][0]][cells[i][1]] |= letters
 
     def refresh_all_letters(self, vocab):
         """
@@ -216,9 +213,9 @@ class CrosswordBoard:
         :param vocab: vocabulary of words, dict
         :return: None
         """
-        for start in self.start_cells["hor"]:
+        for start in self.word_cells["hor"]:
             self.refresh_letters(start, "hor", vocab)
-        for start in self.start_cells["vert"]:
+        for start in self.word_cells["vert"]:
             self.refresh_letters(start, "vert", vocab)
 
     def place_word(self, start_cell, direction, word):
@@ -228,18 +225,18 @@ class CrosswordBoard:
         :param word: str, word to place in cells according to given start cell
         :return: None
         """
-        self.previous_board = self.board
+        self.previous_grid = self.grid
         self.placed_words.append(word)
-        coords = self.start_cells[direction][start_cell]
+        coords = self.word_cells[direction][start_cell]
         for i in range(len(word)):
-            self.board[coords[i][0]][coords[i][1]] = word[i]
+            self.grid[coords[i][0]][coords[i][1]] = word[i]
 
     def step_back(self):
         """
         returns board to its previous state (before last word was placed)
         :return: None
         """
-        self.board = self.previous_board
+        self.grid = self.previous_grid
         self.placed_words.pop(-1)
 
     def is_placed(self, start_cell, direction):
@@ -248,7 +245,7 @@ class CrosswordBoard:
         :param direction: "hor" or "vert", determines direction of start cell
         :return: True if all cells for this start cell are filled with letters else False
         """
-        setup = [self.board[i][j] for (i, j) in self.start_cells[direction][start_cell]]
+        setup = [self.grid[i][j] for (i, j) in self.word_cells[direction][start_cell]]
         for ch in setup:
             if len(ch) > 1:
                 return False
@@ -258,15 +255,15 @@ class CrosswordBoard:
         """
         :return: True if all words are placed else False
         """
-        return len(self.placed_words) == (len(self.start_cells["hor"].keys()) + len(self.start_cells["vert"].keys()))
+        return len(self.placed_words) == (len(self.word_cells["hor"].keys()) + len(self.word_cells["vert"].keys()))
 
     def restart(self):
         """
         returns board into initialized state
         :return:None
         """
-        self.board = [[set(string.ascii_lowercase) if elem != '#' else elem for elem in line] for line in self.board]
-        self.previous_board = self.board
+        self.grid = [[set(string.ascii_lowercase) if elem != '#' else elem for elem in line] for line in self.grid]
+        self.previous_grid = self.grid
         self.placed_words = []
 
     def fill_clues(self, dictionary):
@@ -275,13 +272,17 @@ class CrosswordBoard:
         :param dictionary:
         :return: None
         """
-        weights = {"noun":2, "verb":2,"adverb":3,"adjective":1,"interjection":1,"pronoun":3,"preposition":1}
-        for cell in self.start_cells["hor"].keys():
-            word = "".join([self.board[i][j] for (i, j) in self.start_cells["hor"][cell]])
+        weights = {"noun":2, "verb":2,"adverb":3,"adjective":1,"interjection":1,"pronoun":3,"preposition":1,"conjunction":1,"numeral":1}
+        for cell in self.word_cells["hor"].keys():
+            word = "".join([self.grid[i][j] for (i, j) in self.word_cells["hor"][cell]])
             self.clues["hor"][cell] = choices(list(dictionary[word].values()),weights=[weights[i] for i in dictionary[word].keys()],k=1)
-        for cell in self.start_cells["vert"].keys():
-            word = "".join([self.board[i][j] for (i, j) in self.start_cells["vert"][cell]])
+        for cell in self.word_cells["vert"].keys():
+            word = "".join([self.grid[i][j] for (i, j) in self.word_cells["vert"][cell]])
             self.clues["vert"][cell] = choices(list(dictionary[word].values()),weights=[weights[i] for i in dictionary[word].keys()],k=1)
+
+
+
+
 
 
 class CrosswordGenerator:
@@ -294,48 +295,15 @@ class CrosswordGenerator:
     def show(self):
         print(self.board)
 
-    # def calc_entropy(self):
-    #     """
-    #     :return: dict with horizontal and vertical words word: avg(entropy)
-    #     """
-    #     self.board.refresh_all_letters(self.vocab)
-    #     words_entropy = {"hor": dict(), "vert": dict()}
-    #     entropy = np.zeros(self.size)
-    #     for i in range(self.size[0]):
-    #         for j in range(self.size[1]):
-    #             if self.board[i][j] == '#':
-    #                 continue
-    #             #entropy[i][j] = - len(self.board[i][j]) / 26 * np.log2(len(self.board[i][j]) / 26) if self.board[i][j] else 0
-    #             entropy[i][j] = len(self.board[i][j]) if self.board[i][j] else 0
-    #     for k,v in self.board.start_cells["hor"].items():
-    #         entr = [entropy[i][j] for (i,j) in v]
-    #         words_entropy["hor"][k] = sum(entr)/len(entr)/len(entr)
-    #     for k,v in self.board.start_cells["vert"].items():
-    #         entr = [entropy[i][j] for (i,j) in v]
-    #         words_entropy["vert"][k] = sum(entr)/len(entr)/len(entr)
-    #     return words_entropy
-
-    # def choose_next_start1(self):
-    #     entropy = self.calc_entropy()
-    #     hor_min = min(entropy["hor"], key=entropy["hor"].get)
-    #     vert_min = min(entropy["vert"], key=entropy["vert"].get)
-    #     minimal, direction = (hor_min,"hor") if entropy["hor"][hor_min] <= entropy["vert"][vert_min] else (vert_min,"vert")
-    #     while self.board.is_placed(minimal,direction):
-    #         entropy[direction][minimal] = 100
-    #         hor_min = min(entropy["hor"], key=entropy["hor"].get)
-    #         vert_min = min(entropy["vert"], key=entropy["vert"].get)
-    #         minimal, direction = (hor_min, "hor") if entropy["hor"][hor_min] <= entropy["vert"][vert_min] else (vert_min, "vert")
-    #     return minimal, direction
-
     def choose_next_start(self):
         """
         chooses next best cells to fill
         :return: start cell (i,j), direction ('hor' or 'vert')
         """
         words_num = {"hor": dict(), "vert": dict()}
-        for hor_start in self.board.start_cells["hor"].keys():
+        for hor_start in self.board.word_cells["hor"].keys():
             words_num["hor"][hor_start] = len(self.board.get_possible_words(hor_start, "hor", self.vocab))
-        for vert_start in self.board.start_cells["vert"].keys():
+        for vert_start in self.board.word_cells["vert"].keys():
             words_num["vert"][vert_start] = len(self.board.get_possible_words(vert_start, "vert", self.vocab))
 
         hor_min = min(words_num["hor"], key=words_num["hor"].get)

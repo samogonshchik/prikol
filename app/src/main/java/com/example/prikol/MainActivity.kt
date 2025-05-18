@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//      for what?
+//      to get window size correctly?
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         if (! Python.isStarted()) {
@@ -44,9 +44,9 @@ class MainActivity : ComponentActivity() {
 fun TestPython() {
     Scaffold() { innerPadding ->
         val py = Python.getInstance()
-        val m = py.getModule("CrosswordGen2")
-        val my_a = m.get("a").toString()
+        val main = py.getModule("main")
+        val gridStr = main["grid"]?.asList()?.joinToString("\n")
 
-        Text(text = "hello, bitch, I'm there\n" + my_a, modifier = Modifier.padding(innerPadding))
+        Text(text = "test_output:\n" + gridStr, modifier = Modifier.padding(innerPadding))
     }
 }

@@ -2,3 +2,6 @@
 .idea/
 
 build/
+
+app/src/main/python/.ipynb_checkpoints/
+app/src/main/python/__pycache__/
