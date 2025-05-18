@@ -281,15 +281,12 @@ class CrosswordBoard:
             self.clues["vert"][cell] = choices(list(dictionary[word].values()),weights=[weights[i] for i in dictionary[word].keys()],k=1)
 
 
-
-
-
-
 class CrosswordGenerator:
-    def __init__(self, _vocab, _dictionary, _size=(10, 10), _layout=1):
+    def __init__(self, _vocab, _dictionary, _learned_words, _size=(10, 10), _layout=1):
         self.size = _size
         self.vocab = _vocab
         self.dictionary = _dictionary
+        self.learned_words = _learned_words
         self.board = CrosswordBoard(_layout, _size)
 
     def show(self):
@@ -324,6 +321,8 @@ class CrosswordGenerator:
         :param word: str
         :return: float
         """
+        if word in self.learned_words:
+            return 0.1
         letter_values = {"q": 1, "z": 1, "x": 1, "j": 1, "k": 2, "v": 2, "b": 2, "w": 2, "p": 2, "y": 3, "g": 3, "u": 3,
                          "m": 3, "c": 4, "f": 4,
                          "l": 4, "d": 4, "h": 4, "s": 5, "i": 5, "r": 5, "n": 5, "o": 6, "a": 6, "t": 6, "e": 6}
