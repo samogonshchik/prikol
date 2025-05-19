@@ -33,20 +33,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    TestPython()
+                    CrosswordScreen()
                 }
             }
         }
-    }
-}
-
-@Composable
-fun TestPython() {
-    Scaffold() { innerPadding ->
-        val py = Python.getInstance()
-        val main = py.getModule("main")
-        val gridStr = main["grid"]?.asList()?.joinToString("\n")
-
-        Text(text = "test_output:\n" + gridStr, modifier = Modifier.padding(innerPadding))
     }
 }
