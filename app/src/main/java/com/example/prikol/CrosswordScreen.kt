@@ -50,7 +50,11 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
 @Composable
-fun CrosswordScreen() {
+fun CrosswordScreen(
+    navigateHome: () -> Unit,
+//    more complex data required for statistics
+    navigateWin: (List<String>) -> Unit
+) {
     Scaffold { innerPadding ->
         val py = Python.getInstance()
         val main = py.getModule("main")
@@ -201,7 +205,7 @@ fun CrosswordGrid(
             }
         }
         Text(
-            text = "Dir: ${dir}",
+            text = "Dir: ${dir} ${if (dir == "V") "↓" else "→"}",
             modifier = Modifier
                 .padding(0.dp, 15.dp)
                 .clickable {
@@ -219,10 +223,8 @@ fun CrosswordGrid(
             fontWeight = FontWeight.Bold
         )
         Text(
-//            text = "Horizontally:\n" + clues["hor"]?.map { "${it.key}: ${it.value}\n" }?.joinToString { "\n" } +
-//                    "Vertically:\n"  + clues["vert"]?.map { "${it.key}: ${it.value}\n" }?.joinToString { "\n" },
             text = "Horizontally:\n" + clues["hor"]?.entries?.joinToString("\n") { "${it.key}: ${it.value}".trim { ", ".contains(it) } } +
-                    "Vertically:\n"  + clues["vert"]?.entries?.joinToString("\n") { "${it.key}: ${it.value}".trim { ", ".contains(it) } },
+                    "\nVertically:\n"  + clues["vert"]?.entries?.joinToString("\n") { "${it.key}: ${it.value}".trim { ", ".contains(it) } },
             modifier = Modifier
                 .fillMaxWidth()
                 .border(BorderStroke(1.dp, Color.Black))
