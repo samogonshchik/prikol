@@ -1,5 +1,6 @@
 package com.example.prikol
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,9 +29,35 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.chaquo.python.PyObject
 import com.chaquo.python.Python
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
+fun parseDict(
+    module: PyObject?,
+    fun_name: String
+): Map<String, Map<Pair<Int, Int>, List<String>>> {
+    val jsonString = module!!.callAttr("get_clues").toJava(String::class.java)
+
+    // Parse JSON
+    val gson = Gson()
+    val type = object : TypeToken<Map<String, Map<String, List<String>>>>() {}.type
+    val rawData: Map<String, Map<String, List<String>>> = gson.fromJson(jsonString, type)
+
+    // Convert string keys back to Pair<Int, Int>
+    val res = rawData.mapValues { (_, innerMap) ->
+        innerMap.mapKeys { (key, _) ->
+            val (x, y) = key.split(",").map { it.toInt() }
+            Pair(x, y)
+        }
+    }
+
+    return res
+}
 
 @Composable
 fun CrosswordScreen() {
@@ -37,6 +65,9 @@ fun CrosswordScreen() {
         val py = Python.getInstance()
         val main = py.getModule("main")
         val grid = main["grid"]!!.asList().map { it -> it.asList().map { it -> it.toString() } }
+
+        val clues = parseDict(main, "get_clues")
+        val wordCells = parseDict(main, "get_word_cells")
 
         CrosswordGrid(
             grid = grid,
@@ -58,7 +89,7 @@ fun CrosswordGrid(
         mutableStateOf(
             grid.map { row ->
                 row.map { letter ->
-                    TextFieldValue(text = letter, selection = TextRange(1))
+                    TextFieldValue(text = letter.uppercase(), selection = TextRange(letter.length))
                 }
             }
         )
@@ -73,13 +104,19 @@ fun CrosswordGrid(
             ) {
                 row.forEachIndexed { j, textFieldValue ->
                     CrosswordSquare(
-                        initTextFieldValue = textFieldValue,
+                        initTFW = textFieldValue,
                         onUserInput = { newValue ->
                             // Update the grid with the new TextFieldValue
                             gridValues = gridValues.mapIndexed { r, rowValues ->
                                 if (r == i) {
                                     rowValues.mapIndexed { c, value ->
-                                        if (c == j) newValue.copy(text = newValue.text.last().toString(), selection = TextRange(1)) else value
+                                        if (c == j) {
+                                            val newText = newValue.text.last().toString().uppercase()
+                                            newValue.copy(
+                                                text = newText,
+                                                selection = TextRange(newText.length)
+                                            )
+                                        } else value
                                     }
                                 } else {
                                     rowValues
@@ -99,13 +136,13 @@ fun CrosswordGrid(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrosswordSquare(
-    initTextFieldValue: TextFieldValue,
+    initTFW: TextFieldValue,
     onUserInput: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() } // Provide interaction source
     BasicTextField(
-        value = initTextFieldValue,
+        value = initTFW,
         onValueChange = onUserInput,
         textStyle = LocalTextStyle.current.copy(
             textAlign = TextAlign.Center,
@@ -114,7 +151,7 @@ fun CrosswordSquare(
         singleLine = true,
         decorationBox = { innerTextField ->
             TextFieldDefaults.TextFieldDecorationBox(
-                value = initTextFieldValue.text,
+                value = initTFW.text,
                 innerTextField = innerTextField,
                 enabled = true,
                 singleLine = true,

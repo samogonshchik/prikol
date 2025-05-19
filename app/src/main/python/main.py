@@ -33,3 +33,19 @@ grid = board.grid
 clues = board.clues
 word_cells = board.word_cells
 placed_words = board.placed_words
+
+def prepare(d):
+    res = {
+        k: {
+            ",".join(map(str, key)): value
+            for key, value in inner_dict.items()
+        }
+        for k, inner_dict in d.items()
+    }
+    return json.dumps(res)
+
+def get_clues():
+    return prepare(clues)
+
+def get_word_cells():
+    return prepare(word_cells)
