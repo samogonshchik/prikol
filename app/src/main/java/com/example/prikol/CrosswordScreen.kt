@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text2.input.InputTransformation
-import androidx.compose.foundation.text2.input.maxLengthInChars
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +42,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.chaquo.python.PyException
 import com.chaquo.python.PyObject
 import com.chaquo.python.Python
 import com.google.gson.Gson
@@ -61,14 +60,31 @@ fun CrosswordScreen(
         val grid = main["grid"]!!.asList().map { it -> it.asList().map { it.toString() } }
         val clues = parseClues(main)
         val wordCells = parseWordCells(main)
+        val placedWords = mutableListOf<String>()
+
+        val pyIterator = main.get("placed_words")!!.callAttr("__iter__")
+        while (true) {
+            try {
+                val nextItem: PyObject? = pyIterator.callAttr("__next__")
+                if (nextItem == null) break
+                placedWords.add(nextItem.toString())
+            } catch (e: PyException) {
+                if (e.message?.contains("StopIteration") == true) break
+                throw e
+            }
+        }
 
         Log.d("TAG", grid.joinToString("\n"))
+        Log.d("TAG", placedWords.joinToString())
         Log.d("TAG", clues.toString())
 
         CrosswordGrid(
             filledGrid = grid,
             wordCells = wordCells,
             clues = clues,
+            placedWords = placedWords,
+            navigateHome = navigateHome,
+            navigateWin = navigateWin,
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(15.dp)
@@ -81,6 +97,9 @@ fun CrosswordGrid(
     filledGrid: List<List<String>>,
     wordCells: Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>,
     clues: Map<String, Map<Pair<Int, Int>, List<String>>>,
+    placedWords: List<String>,
+    navigateHome: () -> Unit,
+    navigateWin: (List<String>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showAlert by remember { mutableStateOf(false) }
@@ -88,13 +107,23 @@ fun CrosswordGrid(
         AlertDialog(
             onDismissRequest = { showAlert = false },
             title = { Text("Congratulations!") },
-            text = { Text("You have successfully completed the crossword!") },
+            text = { Text("You have successfully completed the crossword! Press \"Continue\" to proceed mark words you've guessed as learned") },
             confirmButton = {
-                TextButton(onClick = { showAlert = false }) {
-                    Text("OK")
+                TextButton(onClick = {
+                    showAlert = false
+//                    navigateWin(placedWords)
+                }) {
+                    Text("Continue")
                 }
             },
-            dismissButton = null
+            dismissButton = {
+                TextButton(onClick = {
+                    showAlert = false
+                    navigateHome()
+                }) {
+                    Text("Home")
+                }
+            },
         )
     }
     var dir by remember { mutableStateOf("H") }
@@ -205,19 +234,29 @@ fun CrosswordGrid(
             }
         }
         Text(
-            text = "Dir: ${dir} ${if (dir == "V") "↓" else "→"}",
+            text = "GO  WIN",
             modifier = Modifier
                 .padding(0.dp, 15.dp)
                 .clickable {
-                    when (dir) {
-                        "H" -> dir = "V"
-                        "V" -> dir = "H"
-                        else -> dir = "H"
-                    }
+                    navigateWin(placedWords)
                 }
                 .border(BorderStroke(1.dp, Color.Black))
                 .padding(5.dp)
         )
+//        Text(
+//            text = "Dir: ${dir} ${if (dir == "V") "↓" else "→"}",
+//            modifier = Modifier
+//                .padding(0.dp, 15.dp)
+//                .clickable {
+//                    when (dir) {
+//                        "H" -> dir = "V"
+//                        "V" -> dir = "H"
+//                        else -> dir = "H"
+//                    }
+//                }
+//                .border(BorderStroke(1.dp, Color.Black))
+//                .padding(5.dp)
+//        )
         Text(
             text = "CLUES:",
             fontWeight = FontWeight.Bold

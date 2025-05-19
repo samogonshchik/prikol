@@ -90,4 +90,9 @@ dependencies {
     implementation("com.google.accompanist:accompanist-webview:0.31.3-beta")
 
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.8.3")
+    // Gson for JSON serialization (or use another library like Moshi)
+    implementation("com.google.code.gson:gson:2.11.0")
 }
