@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -58,7 +61,6 @@ fun CrosswordScreen() {
         CrosswordGrid(
             filledGrid = grid,
             wordCells = wordCells,
-//            clues = clues,
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(15.dp)
@@ -67,18 +69,10 @@ fun CrosswordScreen() {
     }
 }
 
-data class Cell(
-    val isActive: Boolean,
-    val TFV: TextFieldValue,
-    val color: Color,
-//    val superscript: String
-)
-
 @Composable
 fun CrosswordGrid(
     filledGrid: List<List<String>>,
     wordCells: Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>,
-//    clues: Map<String, Map<Pair<Int, Int>, List<String>>>,
     modifier: Modifier = Modifier
 ) {
     var showAlert by remember { mutableStateOf(false) }
@@ -92,9 +86,10 @@ fun CrosswordGrid(
                     Text("OK")
                 }
             },
-            dismissButton = null // Optional: Add a dismiss button if needed
+            dismissButton = null
         )
     }
+    var dir by remember { mutableStateOf("H") }
 
     var grid by remember {
         mutableStateOf(
@@ -103,7 +98,6 @@ fun CrosswordGrid(
                     Cell(
                         TFV = TextFieldValue(
                             text = if (letter == "#") "#" else "",
-//                            text = "",
                             selection = TextRange(0)
                         ),
                         isActive = if (letter == "#") false else true,
@@ -114,25 +108,30 @@ fun CrosswordGrid(
         )
     }
 
+    // Create FocusRequesters for each cell
+    val focusRequesters = remember {
+        List(filledGrid.size) { List(filledGrid[0].size) { FocusRequester() } }
+    }
+
     Column(
         verticalArrangement = Arrangement.SpaceBetween,
         modifier = modifier
     ) {
+//        filling grid of CrosswordSquare's
         grid.forEachIndexed { i, row ->
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 row.forEachIndexed { j, cell ->
+
                     CrosswordSquare(
                         cellValue = cell,
                         onUserInput = { newTFV ->
                             val newText = if (newTFV.text.isEmpty()) "" else newTFV.text.last().toString()
                             if (newText != cell.TFV.text) {
-                                Log.d("Crossword", "Updating cell ($i,$j) to: $newText")
+//                                Log.d("Crossword", "Updating cell ($i,$j) to: $newText")
 
-
-//                                here recomposition happens ("grid" re-formed)
                                 grid = grid.mapIndexed { r, rowValues ->
                                     if (r == i) {
                                         rowValues.mapIndexed { c, curCell ->
@@ -158,9 +157,13 @@ fun CrosswordGrid(
                                         }
                                     } else rowValues
                                 }
+                                // Move focus to the next cell to the right if it exists and is active
+                                if (j + 1 < filledGrid[i].size && filledGrid[i][j + 1] != "#") {
+                                    focusRequesters[i][j + 1].requestFocus()
+                                }
                             }
                             val curGrid = grid.map { row ->
-                                row.map{ cell ->
+                                row.map { cell ->
                                     cell.TFV.text
                                 }
                             }
@@ -168,11 +171,11 @@ fun CrosswordGrid(
                                 showAlert = true
                             }
                         },
+                        focusRequester = focusRequesters[i][j],
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-//                            .padding(1.dp)
-                            .border(BorderStroke(1.dp, Color.Black)),
+                            .border(BorderStroke(1.dp, Color.Black))
                     )
                 }
             }
@@ -185,6 +188,7 @@ fun CrosswordGrid(
 fun CrosswordSquare(
     cellValue: Cell,
     onUserInput: (TextFieldValue) -> Unit,
+    focusRequester: FocusRequester,
     modifier: Modifier = Modifier
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -194,8 +198,7 @@ fun CrosswordSquare(
         enabled = cellValue.isActive,
         textStyle = LocalTextStyle.current.copy(
             textAlign = TextAlign.Center,
-            fontSize = 20.sp,
-//            color = color
+            fontSize = 20.sp
         ),
         singleLine = true,
         decorationBox = { innerTextField ->
@@ -224,13 +227,10 @@ fun CrosswordSquare(
         ),
         interactionSource = interactionSource,
         visualTransformation = VisualTransformation.None,
-        modifier = modifier
-//            .background(color = cellValue.color),
+        modifier = modifier.focusRequester(focusRequester)
     )
-//    Log.d("TAG", cellValue.color.toString())
 }
 
-// Parse clues dictionary to Map<String, Map<Pair<Int, Int>, List<String>>>
 fun parseClues(module: PyObject?): Map<String, Map<Pair<Int, Int>, List<String>>> {
     val jsonString = module!!.callAttr("get_clues").toJava(String::class.java)
     val gson = Gson()
@@ -244,7 +244,6 @@ fun parseClues(module: PyObject?): Map<String, Map<Pair<Int, Int>, List<String>>
     }
 }
 
-// Parse word_cells dictionary to Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>
 fun parseWordCells(module: PyObject?): Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>> {
     val jsonString = module!!.callAttr("get_word_cells").toJava(String::class.java)
     val gson = Gson()
@@ -262,3 +261,9 @@ fun parseWordCells(module: PyObject?): Map<String, Map<Pair<Int, Int>, List<Pair
         }
     }
 }
+
+data class Cell(
+    val isActive: Boolean,
+    val TFV: TextFieldValue,
+    val color: Color
+)
