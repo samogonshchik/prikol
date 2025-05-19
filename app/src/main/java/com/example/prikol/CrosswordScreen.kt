@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text2.input.InputTransformation
 import androidx.compose.foundation.text2.input.maxLengthInChars
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalTextStyle
@@ -34,6 +36,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -61,10 +64,10 @@ fun CrosswordScreen() {
         CrosswordGrid(
             filledGrid = grid,
             wordCells = wordCells,
+            clues = clues,
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(15.dp)
-                .border(BorderStroke(2.dp, Color.Black))
         )
     }
 }
@@ -73,6 +76,7 @@ fun CrosswordScreen() {
 fun CrosswordGrid(
     filledGrid: List<List<String>>,
     wordCells: Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>,
+    clues: Map<String, Map<Pair<Int, Int>, List<String>>>,
     modifier: Modifier = Modifier
 ) {
     var showAlert by remember { mutableStateOf(false) }
@@ -112,78 +116,123 @@ fun CrosswordGrid(
     val focusRequesters = remember {
         List(filledGrid.size) { List(filledGrid[0].size) { FocusRequester() } }
     }
+    Column (modifier = modifier) {
+        Column(
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .border(BorderStroke(2.dp, Color.Black))
+        ) {
+    //        filling grid of CrosswordSquare's
+            grid.forEachIndexed { i, row ->
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    row.forEachIndexed { j, cell ->
 
-    Column(
-        verticalArrangement = Arrangement.SpaceBetween,
-        modifier = modifier
-    ) {
-//        filling grid of CrosswordSquare's
-        grid.forEachIndexed { i, row ->
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                row.forEachIndexed { j, cell ->
+                        CrosswordSquare(
+                            cellValue = cell,
+                            onUserInput = { newTFV ->
+                                val newText =
+                                    if (newTFV.text.isEmpty()) "" else newTFV.text.last().toString()
+                                if (newText != cell.TFV.text) {
+    //                                Log.d("Crossword", "Updating cell ($i,$j) to: $newText")
 
-                    CrosswordSquare(
-                        cellValue = cell,
-                        onUserInput = { newTFV ->
-                            val newText = if (newTFV.text.isEmpty()) "" else newTFV.text.last().toString()
-                            if (newText != cell.TFV.text) {
-//                                Log.d("Crossword", "Updating cell ($i,$j) to: $newText")
-
-                                grid = grid.mapIndexed { r, rowValues ->
-                                    if (r == i) {
-                                        rowValues.mapIndexed { c, curCell ->
-                                            if (c == j && newText != curCell.TFV.text) {
-                                                if (filledGrid[i][j] == newText) {
-                                                    curCell.copy(
-                                                        TFV = newTFV.copy(
-                                                            text = newText,
-                                                            selection = TextRange(newText.length)
-                                                        ),
-                                                        isActive = false,
-                                                        color = Color.LightGray
-                                                    )
-                                                } else {
-                                                    curCell.copy(
-                                                        TFV = newTFV.copy(
-                                                            text = newText,
-                                                            selection = TextRange(newText.length)
+                                    grid = grid.mapIndexed { r, rowValues ->
+                                        if (r == i) {
+                                            rowValues.mapIndexed { c, curCell ->
+                                                if (c == j && newText != curCell.TFV.text) {
+                                                    if (filledGrid[i][j] == newText) {
+                                                        curCell.copy(
+                                                            TFV = newTFV.copy(
+                                                                text = newText,
+                                                                selection = TextRange(newText.length)
+                                                            ),
+                                                            isActive = false,
+                                                            color = Color.LightGray
                                                         )
-                                                    )
-                                                }
-                                            } else curCell
+                                                    } else {
+                                                        curCell.copy(
+                                                            TFV = newTFV.copy(
+                                                                text = newText,
+                                                                selection = TextRange(newText.length)
+                                                            )
+                                                        )
+                                                    }
+                                                } else curCell
+                                            }
+                                        } else rowValues
+                                    }
+                                    // Move focus to the next cell to the right if it exists and is active
+                                    when (dir) {
+                                        "H" -> {
+                                            if (j + 1 < filledGrid[i].size) {
+                                                focusRequesters[i][j + 1].requestFocus()
+                                            }
                                         }
-                                    } else rowValues
+
+                                        "V" -> {
+                                            if (i + 1 < filledGrid[i].size) {
+                                                focusRequesters[i + 1][j].requestFocus()
+                                            }
+                                        }
+
+                                        else -> {}
+                                    }
+
                                 }
-                                // Move focus to the next cell to the right if it exists and is active
-                                if (j + 1 < filledGrid[i].size && filledGrid[i][j + 1] != "#") {
-                                    focusRequesters[i][j + 1].requestFocus()
+                                val curGrid = grid.map { row ->
+                                    row.map { cell ->
+                                        cell.TFV.text
+                                    }
                                 }
-                            }
-                            val curGrid = grid.map { row ->
-                                row.map { cell ->
-                                    cell.TFV.text
+                                if (curGrid == filledGrid) {
+                                    showAlert = true
                                 }
-                            }
-                            if (curGrid == filledGrid) {
-                                showAlert = true
-                            }
-                        },
-                        focusRequester = focusRequesters[i][j],
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .border(BorderStroke(1.dp, Color.Black))
-                    )
+                            },
+                            focusRequester = focusRequesters[i][j],
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f)
+                                .border(BorderStroke(1.dp, Color.Black))
+                        )
+                    }
                 }
             }
         }
+        Text(
+            text = "Dir: ${dir}",
+            modifier = Modifier
+                .padding(0.dp, 15.dp)
+                .clickable {
+                    when (dir) {
+                        "H" -> dir = "V"
+                        "V" -> dir = "H"
+                        else -> dir = "H"
+                    }
+                }
+                .border(BorderStroke(1.dp, Color.Black))
+                .padding(5.dp)
+        )
+        Text(
+            text = "CLUES:",
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+//            text = "Horizontally:\n" + clues["hor"]?.map { "${it.key}: ${it.value}\n" }?.joinToString { "\n" } +
+//                    "Vertically:\n"  + clues["vert"]?.map { "${it.key}: ${it.value}\n" }?.joinToString { "\n" },
+            text = "Horizontally:\n" + clues["hor"]?.entries?.joinToString("\n") { "${it.key}: ${it.value}".trim { ", ".contains(it) } } +
+                    "Vertically:\n"  + clues["vert"]?.entries?.joinToString("\n") { "${it.key}: ${it.value}".trim { ", ".contains(it) } },
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(BorderStroke(1.dp, Color.Black))
+                .padding(15.dp)
+                .verticalScroll(rememberScrollState())
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CrosswordSquare(
     cellValue: Cell,
