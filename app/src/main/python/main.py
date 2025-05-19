@@ -34,18 +34,24 @@ clues = board.clues
 word_cells = board.word_cells
 placed_words = board.placed_words
 
-def prepare(d):
-    res = {
-        k: {
-            ",".join(map(str, key)): value
-            for key, value in inner_dict.items()
-        }
-        for k, inner_dict in d.items()
-    }
-    return json.dumps(res)
-
 def get_clues():
-    return prepare(clues)
+    # Convert tuple keys to strings
+    clues_str = {
+        direction: {
+            f"{x},{y}": clues
+            for (x, y), clues in direction_data.items()
+        }
+        for direction, direction_data in clues.items()
+    }
+    return json.dumps(clues_str)
 
 def get_word_cells():
-    return prepare(word_cells)
+    # Convert tuple keys and values to strings
+    word_cells_str = {
+        direction: {
+            f"{x},{y}": [f"{cx},{cy}" for (cx, cy) in cells]
+            for (x, y), cells in direction_data.items()
+        }
+        for direction, direction_data in word_cells.items()
+    }
+    return json.dumps(word_cells_str)
