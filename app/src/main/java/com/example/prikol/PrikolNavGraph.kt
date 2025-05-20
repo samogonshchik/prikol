@@ -7,8 +7,14 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.prikol.ui.CrosswordScreen
+import com.example.prikol.ui.HomeScreen
+import com.example.prikol.ui.LearnedWordsScreen
+import com.example.prikol.ui.RulesScreen
+import com.example.prikol.ui.WinScreen
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.net.URLEncoder
 
 enum class PrikolScreens() {
     Home,
@@ -26,13 +32,15 @@ fun PrikolNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = PrikolScreens.Home.name,
+        startDestination = PrikolScreens.Game.name,
+//        startDestination = PrikolScreens.Home.name,
         modifier = modifier
     ) {
         composable(route = PrikolScreens.Home.name) {
             HomeScreen(
                 navigateGame = { navController.navigate(PrikolScreens.Game.name) },
-                navigateRules = { navController.navigate(PrikolScreens.Rules.name) }
+                navigateRules = { navController.navigate(PrikolScreens.Rules.name) },
+                navigateLearnedWords = { navController.navigate(PrikolScreens.LearnedWords.name) }
             )
         }
         composable(route = PrikolScreens.Game.name) {
@@ -42,7 +50,7 @@ fun PrikolNavHost(
                     // Serialize the list to JSON
                     val jsonList = Gson().toJson(wordList)
                     // Encode to handle special characters
-                    val encodedJson = java.net.URLEncoder.encode(jsonList, "UTF-8")
+                    val encodedJson = URLEncoder.encode(jsonList, "UTF-8")
                     navController.navigate("${PrikolScreens.Win.name}/$encodedJson")
                 }
             )
@@ -73,6 +81,13 @@ fun PrikolNavHost(
             } ?: emptyList()
             WinScreen(
                 placedWords = wordList,
+                navigateHome = { navController.navigate(PrikolScreens.Home.name) }
+            )
+        }
+        composable(
+            route = PrikolScreens.LearnedWords.name
+        ) {
+            LearnedWordsScreen (
                 navigateHome = { navController.navigate(PrikolScreens.Home.name) }
             )
         }

@@ -1,9 +1,7 @@
-package com.example.prikol
+package com.example.prikol.ui
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -111,7 +109,7 @@ fun CrosswordGrid(
             confirmButton = {
                 TextButton(onClick = {
                     showAlert = false
-//                    navigateWin(placedWords)
+                    navigateWin(placedWords)
                 }) {
                     Text("Continue")
                 }
@@ -233,30 +231,34 @@ fun CrosswordGrid(
                 }
             }
         }
-        Text(
-            text = "GO  WIN",
-            modifier = Modifier
-                .padding(0.dp, 15.dp)
-                .clickable {
-                    navigateWin(placedWords)
-                }
-                .border(BorderStroke(1.dp, Color.Black))
-                .padding(5.dp)
-        )
-//        Text(
-//            text = "Dir: ${dir} ${if (dir == "V") "↓" else "→"}",
-//            modifier = Modifier
-//                .padding(0.dp, 15.dp)
-//                .clickable {
-//                    when (dir) {
-//                        "H" -> dir = "V"
-//                        "V" -> dir = "H"
-//                        else -> dir = "H"
-//                    }
-//                }
-//                .border(BorderStroke(1.dp, Color.Black))
-//                .padding(5.dp)
-//        )
+        Row() {
+            Text(
+                text = "Dir: ${dir} ${if (dir == "V") "↓" else "→"}",
+                modifier = Modifier
+                    .padding(0.dp, 15.dp)
+                    .clickable {
+                        when (dir) {
+                            "H" -> dir = "V"
+                            "V" -> dir = "H"
+                            else -> dir = "H"
+                        }
+                    }
+                    .border(BorderStroke(1.dp, Color.Black))
+                    .padding(5.dp)
+            )
+            Text(
+                text = "GO  WIN",
+                modifier = Modifier
+                    .padding(15.dp)
+                    .clickable {
+                        navigateWin(placedWords)
+                    }
+                    .border(BorderStroke(1.dp, Color.Black))
+                    .padding(5.dp)
+            )
+        }
+
+
         Text(
             text = "CLUES:",
             fontWeight = FontWeight.Bold

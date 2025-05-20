@@ -1,4 +1,4 @@
-package com.example.prikol
+package com.example.prikol.ui
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
@@ -22,7 +22,8 @@ import com.chaquo.python.Python
 @Composable
 fun HomeScreen(
     navigateGame: () -> Unit,
-    navigateRules: () -> Unit
+    navigateRules: () -> Unit,
+    navigateLearnedWords: () -> Unit
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -36,21 +37,30 @@ fun HomeScreen(
         ) {
             Text(
                 text = "GAME",
-                fontSize = 40.sp,
+                fontSize = 30.sp,
                 modifier = Modifier
                     .padding(0.dp, 0.dp, 0.dp, 20.dp)
                     .clickable { navigateGame() }
                     .border(BorderStroke(1.dp, Color.Black))
-                    .padding(5.dp)
+                    .padding(10.dp)
             )
             Text(
                 text = "RULES",
-                fontSize = 40.sp,
+                fontSize = 30.sp,
                 modifier = Modifier
-//                    .padding(0.dp, 0.dp, 0.dp, 15.dp)
+                    .padding(0.dp, 0.dp, 0.dp, 20.dp)
                     .clickable { navigateRules() }
                     .border(BorderStroke(1.dp, Color.Black))
-                    .padding(5.dp)
+                    .padding(10.dp)
+            )
+            Text(
+                text = "LEARNED WORDS",
+                fontSize = 30.sp,
+                modifier = Modifier
+//                    .padding(0.dp, 0.dp, 0.dp, 15.dp)
+                    .clickable { navigateLearnedWords() }
+                    .border(BorderStroke(1.dp, Color.Black))
+                    .padding(10.dp)
             )
         }
     }

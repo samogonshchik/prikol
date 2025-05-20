@@ -1,4 +1,4 @@
-package com.example.prikol
+package com.example.prikol.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
