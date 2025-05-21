@@ -1,5 +1,6 @@
 package com.example.prikol
 
+import Test
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -22,7 +23,8 @@ enum class PrikolScreens() {
     Rules,
     Win,
     LearnedWords,
-    Statistics
+    Statistics,
+    Test
 }
 
 @Composable
@@ -32,7 +34,7 @@ fun PrikolNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = PrikolScreens.Game.name,
+        startDestination = PrikolScreens.Test.name,
 //        startDestination = PrikolScreens.Home.name,
         modifier = modifier
     ) {
@@ -87,8 +89,15 @@ fun PrikolNavHost(
         composable(
             route = PrikolScreens.LearnedWords.name
         ) {
-            LearnedWordsScreen (
+            LearnedWordsScreen(
                 navigateHome = { navController.navigate(PrikolScreens.Home.name) }
+            )
+        }
+        composable(
+            route = PrikolScreens.Test.name
+        ) {
+            Test(
+//                navigateHome = { navController.navigate(PrikolScreens.Home.name) }
             )
         }
     }
