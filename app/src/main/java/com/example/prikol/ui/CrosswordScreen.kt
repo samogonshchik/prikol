@@ -1,458 +1,348 @@
-package com.example.prikol.ui
-
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LocalTextStyle
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.chaquo.python.PyException
-import com.chaquo.python.PyObject
-import com.chaquo.python.Python
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.example.prikol.ui.clues
+import com.example.prikol.ui.filledGrid
+import com.example.prikol.ui.wordCells
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.File
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CrosswordScreen(
-    navigateHome: () -> Unit,
-//    more complex data required for statistics
-    navigateWin: (List<String>) -> Unit
+    newGameQ: Boolean = true
 ) {
-    Scaffold { innerPadding ->
-//        val py = Python.getInstance()
-//        val main = py.getModule("main")
-//        val grid = main["grid"]!!.asList().map { it -> it.asList().map { it.toString() } }
-//        val clues = parseClues(main)
-//        val wordCells = parseWordCells(main)
-//        val placedWords = mutableListOf<String>()
-//
-//        val pyIterator = main.get("placed_words")!!.callAttr("__iter__")
-//        while (true) {
-//            try {
-//                val nextItem: PyObject? = pyIterator.callAttr("__next__")
-//                if (nextItem == null) break
-//                placedWords.add(nextItem.toString())
-//            } catch (e: PyException) {
-//                if (e.message?.contains("StopIteration") == true) break
-//                throw e
-//            }
-//        }
+    Scaffold(
 
-        // Grid: 2D List of Characters (including '#')
-        val grid = listOf(
-            listOf("s", "t", "a", "t", "e", "m", "e", "n", "t", "#"),
-            listOf("#", "r", "#", "o", "#", "e", "#", "o", "#", "a"),
-            listOf("d", "e", "t", "o", "n", "a", "t", "o", "r", "s"),
-            listOf("#", "y", "#", "k", "#", "d", "#", "d", "#", "s"),
-            listOf("a", "#", "a", "#", "g", "o", "a", "l", "i", "e"),
-            listOf("n", "e", "p", "h", "e", "w", "#", "e", "#", "t"),
-            listOf("t", "#", "o", "#", "n", "#", "m", "#", "n", "#"),
-            listOf("s", "p", "l", "a", "t", "t", "e", "r", "e", "d"),
-            listOf("y", "#", "l", "#", "l", "#", "n", "#", "a", "#"),
-            listOf("#", "b", "o", "d", "y", "g", "u", "a", "r", "d")
-        )
+    ) { innerPadding ->
+        var selectedCell by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+        var tfv by remember { mutableStateOf("") }
+        val focusRequester = remember { FocusRequester() }
+        val keyboardController = LocalSoftwareKeyboardController.current
 
-// Clues: Map with Pair<Int, Int> as keys and List of Strings as values, nested under "hor" and "vert"
-        val clues = mapOf(
-            "hor" to mapOf(
-                Pair(0, 0) to listOf("A declaration or remark"),
-                Pair(2, 0) to listOf("A device used to detonate an explosive device etc"),
-                Pair(4, 4) to listOf("A goalkeeper or goaltender"),
-                Pair(5, 0) to listOf("A son of one's sibling, brother-in-law, or sister-in-law"),
-                Pair(7, 0) to listOf("To splash"),
-                Pair(9, 1) to listOf("To act as bodyguard for")
-            ),
-            "vert" to mapOf(
-                Pair(0, 1) to listOf("A playing card or die with the rank of three"),
-                Pair(0, 3) to listOf("To get into one's hands, possession or control, with or without force"),
-                Pair(0, 5) to listOf("A field or pasture"),
-                Pair(0, 7) to listOf("To think or ponder"),
-                Pair(1, 9) to listOf("Something or someone of any value"),
-                Pair(4, 0) to listOf("Restless, apprehensive and fidgety"),
-                Pair(4, 2) to listOf("A very handsome young man"),
-                Pair(4, 4) to listOf("In a gentle manner"),
-                Pair(6, 6) to listOf("a bill of fare"),
-                Pair(6, 8) to listOf("At or towards a position close in space or time")
+        val context = LocalContext.current
+        val gridFile = File(context.filesDir, "crossword_grid.json")
+        val grid = remember {
+            val initialGrid = mutableStateListOf(
+                mutableListOf(*filledGrid[0].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[1].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[2].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[3].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[4].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[5].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[6].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[7].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[8].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[9].map { if (it == "#") "#" else "" }.toTypedArray())
             )
-        )
-
-// Word Cells: Map with Pair<Int, Int> as keys and List of Pair<Int, Int> as values, nested under "hor" and "vert"
-        val wordCells = mapOf(
-            "hor" to mapOf(
-                Pair(0, 0) to listOf(
-                    Pair(0, 0), Pair(0, 1), Pair(0, 2), Pair(0, 3), Pair(0, 4),
-                    Pair(0, 5), Pair(0, 6), Pair(0, 7), Pair(0, 8)
-                ),
-                Pair(2, 0) to listOf(
-                    Pair(2, 0), Pair(2, 1), Pair(2, 2), Pair(2, 3), Pair(2, 4),
-                    Pair(2, 5), Pair(2, 6), Pair(2, 7), Pair(2, 8), Pair(2, 9)
-                ),
-                Pair(4, 4) to listOf(
-                    Pair(4, 4), Pair(4, 5), Pair(4, 6), Pair(4, 7), Pair(4, 8), Pair(4, 9)
-                ),
-                Pair(5, 0) to listOf(
-                    Pair(5, 0), Pair(5, 1), Pair(5, 2), Pair(5, 3), Pair(5, 4), Pair(5, 5)
-                ),
-                Pair(7, 0) to listOf(
-                    Pair(7, 0), Pair(7, 1), Pair(7, 2), Pair(7, 3), Pair(7, 4),
-                    Pair(7, 5), Pair(7, 6), Pair(7, 7), Pair(7, 8), Pair(7, 9)
-                ),
-                Pair(9, 1) to listOf(
-                    Pair(9, 1), Pair(9, 2), Pair(9, 3), Pair(9, 4), Pair(9, 5),
-                    Pair(9, 6), Pair(9, 7), Pair(9, 8), Pair(9, 9)
-                )
-            ),
-            "vert" to mapOf(
-                Pair(0, 1) to listOf(Pair(0, 1), Pair(1, 1), Pair(2, 1), Pair(3, 1)),
-                Pair(0, 3) to listOf(Pair(0, 3), Pair(1, 3), Pair(2, 3), Pair(3, 3)),
-                Pair(0, 5) to listOf(
-                    Pair(0, 5), Pair(1, 5), Pair(2, 5), Pair(3, 5), Pair(4, 5), Pair(5, 5)
-                ),
-                Pair(0, 7) to listOf(
-                    Pair(0, 7), Pair(1, 7), Pair(2, 7), Pair(3, 7), Pair(4, 7), Pair(5, 7)
-                ),
-                Pair(1, 9) to listOf(
-                    Pair(1, 9), Pair(2, 9), Pair(3, 9), Pair(4, 9), Pair(5, 9)
-                ),
-                Pair(4, 0) to listOf(
-                    Pair(4, 0), Pair(5, 0), Pair(6, 0), Pair(7, 0), Pair(8, 0)
-                ),
-                Pair(4, 2) to listOf(
-                    Pair(4, 2), Pair(5, 2), Pair(6, 2), Pair(7, 2), Pair(8, 2), Pair(9, 2)
-                ),
-                Pair(4, 4) to listOf(
-                    Pair(4, 4), Pair(5, 4), Pair(6, 4), Pair(7, 4), Pair(8, 4), Pair(9, 4)
-                ),
-                Pair(6, 6) to listOf(Pair(6, 6), Pair(7, 6), Pair(8, 6), Pair(9, 6)),
-                Pair(6, 8) to listOf(Pair(6, 8), Pair(7, 8), Pair(8, 8), Pair(9, 8))
+            if (!newGameQ && gridFile.exists()) {
+                try {
+                    val savedGrid = Json.decodeFromString<List<List<String>>>(gridFile.readText())
+                    mutableStateListOf(*savedGrid.map { mutableListOf(*it.toTypedArray()) }.toTypedArray())
+                } catch (e: Exception) {
+                    println("Failed to load grid: $e")
+                    initialGrid
+                }
+            } else {
+                initialGrid
+            }
+        }
+        val availableCells = remember {
+            mutableStateListOf(
+                mutableListOf(*filledGrid[0].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[1].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[2].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[3].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[4].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[5].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[6].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[7].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[8].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[9].map { it != "#" }.toTypedArray())
             )
-        )
+        }
+        fun checkAndDisableWord(wordCells: List<Pair<Int, Int>>) {
+            println("checking word")
+            val word = wordCells.map { grid[it.first][it.second] }.joinToString("")
+            val correctWord = wordCells.map { filledGrid[it.first][it.second] }.joinToString("")
+            if (word == correctWord && word.isNotEmpty() && wordCells.all { grid[it.first][it.second] != "#" }) {
+                println("disabling word")
+                wordCells.forEach { (row, col) ->
+                    availableCells[row][col] = false
+                }
+                selectedCell = null
+//                mb remove hiding keyboard
+                keyboardController?.hide()
+            }
+        }
+        fun checkAllWords() {
+            wordCells["hor"]?.values?.forEach { wordCells ->
+                checkAndDisableWord(wordCells)
+            }
+            wordCells["vert"]?.values?.forEach { wordCells ->
+                checkAndDisableWord(wordCells)
+            }
+        }
+//        checkAllWords()
 
-// Placed Words: List of Strings
-        val placedWords = listOf(
-            "detonators", "asset", "took", "trey", "statement", "noodle",
-            "meadow", "goalie", "nephew", "gently", "bodyguard", "apollo",
-            "splattered", "menu", "antsy", "near"
-        )
+        var dir by remember { mutableStateOf("h") }
+        fun getSelectedWord(
+            selectedCell: Pair<Int, Int>?,
+            dir: String,
+            wordCells: Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>
+        ): List<Pair<Int, Int>>? {
+            if (selectedCell == null) return null
+            val direction = if (dir == "h") "hor" else "vert"
+            return wordCells[direction]?.entries?.find { entry ->
+                entry.value.contains(selectedCell)
+            }?.value
+        }
+        fun getAvailableDirections(
+            cell: Pair<Int, Int>,
+            wordCells: Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>
+        ): List<String> {
+            val directions = mutableListOf<String>()
+            if (wordCells["hor"]?.entries?.any { it.value.contains(cell) } == true) {
+                directions.add("h")
+            }
+            if (wordCells["vert"]?.entries?.any { it.value.contains(cell) } == true) {
+                directions.add("v")
+            }
+            return directions
+        }
 
-        Log.d("TAG", grid.joinToString("\n"))
-        Log.d("TAG", placedWords.joinToString())
-        Log.d("TAG", clues.toString())
+        // Get the currently selected word
+        val selectedWord = getSelectedWord(selectedCell, dir, wordCells)
 
-        CrosswordGrid(
-            filledGrid = grid,
-            wordCells = wordCells,
-            clues = clues,
-            placedWords = placedWords,
-            navigateHome = navigateHome,
-            navigateWin = navigateWin,
+        Column(
+            verticalArrangement = Arrangement.spacedBy(1.dp),
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(15.dp)
-        )
-    }
-}
-
-@Composable
-fun CrosswordGrid(
-    filledGrid: List<List<String>>,
-    wordCells: Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>,
-    clues: Map<String, Map<Pair<Int, Int>, List<String>>>,
-    placedWords: List<String>,
-    navigateHome: () -> Unit,
-    navigateWin: (List<String>) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var showAlert by remember { mutableStateOf(false) }
-    if (showAlert) {
-        AlertDialog(
-            onDismissRequest = { showAlert = false },
-            title = { Text("Congratulations!") },
-            text = { Text("You have successfully completed the crossword! Press \"Continue\" to proceed mark words you've guessed as learned") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showAlert = false
-                    navigateWin(placedWords)
-                }) {
-                    Text("Continue")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showAlert = false
-                    navigateHome()
-                }) {
-                    Text("Home")
-                }
-            },
-        )
-    }
-    var dir by remember { mutableStateOf("H") }
-
-    var grid by remember {
-        mutableStateOf(
-            filledGrid.map { row ->
-                row.map { letter ->
-                    Cell(
-                        TFV = TextFieldValue(
-                            text = if (letter == "#") "#" else "",
-                            selection = TextRange(0)
-                        ),
-                        isActive = if (letter == "#") false else true,
-                        color = if (letter == "#") Color.Black else Color.White
-                    )
-                }
-            }
-        )
-    }
-
-    // Create FocusRequesters for each cell
-    val focusRequesters = remember {
-        List(filledGrid.size) { List(filledGrid[0].size) { FocusRequester() } }
-    }
-    Column (modifier = modifier) {
-        Column(
-            verticalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .border(BorderStroke(2.dp, Color.Black))
+                .fillMaxWidth()
+                .padding(10.dp)
+//                .border(BorderStroke(1.dp, Color.Black))
         ) {
-    //        filling grid of CrosswordSquare's
-            grid.forEachIndexed { i, row ->
+
+
+            grid.forEachIndexed { r, row ->
                 Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.spacedBy(1.dp),
                 ) {
-                    row.forEachIndexed { j, cell ->
-
-                        CrosswordSquare(
-                            cellValue = cell,
-                            onUserInput = { newTFV ->
-                                val newText =
-                                    if (newTFV.text.isEmpty()) "" else newTFV.text.last().toString()
-                                if (newText != cell.TFV.text) {
-    //                                Log.d("Crossword", "Updating cell ($i,$j) to: $newText")
-
-                                    grid = grid.mapIndexed { r, rowValues ->
-                                        if (r == i) {
-                                            rowValues.mapIndexed { c, curCell ->
-                                                if (c == j && newText != curCell.TFV.text) {
-                                                    if (filledGrid[i][j] == newText) {
-                                                        curCell.copy(
-                                                            TFV = newTFV.copy(
-                                                                text = newText,
-                                                                selection = TextRange(newText.length)
-                                                            ),
-                                                            isActive = false,
-                                                            color = Color.LightGray
-                                                        )
-                                                    } else {
-                                                        curCell.copy(
-                                                            TFV = newTFV.copy(
-                                                                text = newText,
-                                                                selection = TextRange(newText.length)
-                                                            )
-                                                        )
-                                                    }
-                                                } else curCell
-                                            }
-                                        } else rowValues
+                    row.forEachIndexed { c, elem ->
+                        CrosswordCell(
+                            letter = elem,
+                            isSelected = selectedCell == Pair(r, c),
+                            isEnabled = availableCells[r][c],
+                            onClick = {
+                                val availableDirections = getAvailableDirections(Pair(r, c), wordCells)
+                                dir = availableDirections[0]
+                                focusRequester.requestFocus()
+                                keyboardController?.show()
+                                selectedCell = Pair(r, c)
+                                println("selected cell now: $selectedCell")
+                            },
+                            onClickWhenSelected = {
+                                if (availableCells[r][c]) {
+                                    val availableDirections = getAvailableDirections(Pair(r, c), wordCells)
+                                    if (availableDirections.size > 1) {
+                                        // Toggle to the other direction if both are available
+                                        dir = if (dir == "h") "v" else "h"
+                                    } else if (availableDirections.isNotEmpty() && dir != availableDirections[0]) {
+                                        // Switch to the only available direction if different
+                                        dir = availableDirections[0]
                                     }
-                                    // Move focus to the next cell to the right if it exists and is active
-                                    when (dir) {
-                                        "H" -> {
-                                            if (j + 1 < filledGrid[i].size) {
-                                                focusRequesters[i][j + 1].requestFocus()
-                                            }
-                                        }
-
-                                        "V" -> {
-                                            if (i + 1 < filledGrid[i].size) {
-                                                focusRequesters[i + 1][j].requestFocus()
-                                            }
-                                        }
-
-                                        else -> {}
-                                    }
-
-                                }
-                                val curGrid = grid.map { row ->
-                                    row.map { cell ->
-                                        cell.TFV.text
-                                    }
-                                }
-                                if (curGrid == filledGrid) {
-                                    showAlert = true
+                                    println("clicked selected cell ${Pair(r, c)}, direction now $dir")
                                 }
                             },
-                            focusRequester = focusRequesters[i][j],
                             modifier = Modifier
-                                .weight(1f)
                                 .aspectRatio(1f)
-                                .border(BorderStroke(1.dp, Color.Black))
+                                .weight(1f)
+//                                .padding(1.dp)
                         )
                     }
                 }
             }
-        }
-        Row() {
-            Text(
-                text = "Dir: ${dir} ${if (dir == "V") "↓" else "→"}",
-                modifier = Modifier
-                    .padding(0.dp, 15.dp)
-                    .clickable {
-                        when (dir) {
-                            "H" -> dir = "V"
-                            "V" -> dir = "H"
-                            else -> dir = "H"
+
+//            hidden TextField for input (required to show IME)
+            TextField(
+                value = tfv,
+                onValueChange = { newValue ->
+                    val oldTfv = tfv
+                    tfv = if (oldTfv.isNotBlank() && newValue.isNotBlank()) {
+                        newValue.last().toString()
+                    } else {
+                        newValue
+                    }
+                    if (selectedCell != null && availableCells[selectedCell!!.first][selectedCell!!.second]) {
+                        val currentCell = selectedCell!!
+                        if (tfv != oldTfv) { // Only update if input changed
+                            grid[currentCell.first][currentCell.second] = tfv
+                            // Check both horizontal and vertical words
+                            val horizontalWord = getSelectedWord(currentCell, "h", wordCells)
+                            val verticalWord = getSelectedWord(currentCell, "v", wordCells)
+                            if (horizontalWord != null) {
+                                checkAndDisableWord(horizontalWord)
+                            }
+                            if (verticalWord != null) {
+                                checkAndDisableWord(verticalWord)
+                            }
+                            // Move to next available cell in current word
+                            val currentWord = getSelectedWord(currentCell, dir, wordCells)
+                            if (currentWord != null && tfv.isNotBlank()) {
+                                val currentIndex = currentWord.indexOf(currentCell)
+                                val nextIndex = (currentIndex + 1)
+                                if (nextIndex < currentWord.size) {
+                                    val nextCell = currentWord[nextIndex]
+                                    if (availableCells[nextCell.first][nextCell.second]) {
+                                        selectedCell = nextCell
+                                        focusRequester.requestFocus()
+                                        keyboardController?.show()
+                                    }
+                                }
+                            }
+                            // Save grid to file
+                            try {
+                                val gridToSave = grid.map { it.toList() }.toList()
+                                gridFile.writeText(Json.encodeToString(gridToSave))
+                                println("Grid saved to file")
+                                println("SAVED: " + Json.encodeToString(gridToSave))
+                            } catch (e: Exception) {
+                                println("Failed to save grid: $e")
+                            }
                         }
                     }
-                    .border(BorderStroke(1.dp, Color.Black))
-                    .padding(5.dp)
-            )
-            Text(
-                text = "GO  WIN",
+                },
                 modifier = Modifier
-                    .padding(15.dp)
-                    .clickable {
-                        navigateWin(placedWords)
+                    .focusRequester(focusRequester)
+                    .visibility(false)
+                    .onFocusChanged { focusState ->
+                        if (!focusState.isFocused) {
+                            selectedCell = null
+                        }
                     }
-                    .border(BorderStroke(1.dp, Color.Black))
-                    .padding(5.dp)
+                    .size(1.dp)
             )
-        }
 
-
-        Text(
-            text = "CLUES:",
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Horizontally:\n" + clues["hor"]?.entries?.joinToString("\n") { "${it.key}: ${it.value}".trim { ", ".contains(it) } } +
-                    "\nVertically:\n"  + clues["vert"]?.entries?.joinToString("\n") { "${it.key}: ${it.value}".trim { ", ".contains(it) } },
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(BorderStroke(1.dp, Color.Black))
-                .padding(15.dp)
-                .verticalScroll(rememberScrollState())
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CrosswordSquare(
-    cellValue: Cell,
-    onUserInput: (TextFieldValue) -> Unit,
-    focusRequester: FocusRequester,
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    BasicTextField(
-        value = cellValue.TFV,
-        onValueChange = onUserInput,
-        enabled = cellValue.isActive,
-        textStyle = LocalTextStyle.current.copy(
-            textAlign = TextAlign.Center,
-            fontSize = 20.sp
-        ),
-        singleLine = true,
-        decorationBox = { innerTextField ->
-            TextFieldDefaults.TextFieldDecorationBox(
-                value = cellValue.TFV.text,
-                innerTextField = innerTextField,
-                singleLine = true,
-                enabled = cellValue.isActive,
-                colors = TextFieldDefaults.colors(
-                    disabledContainerColor = cellValue.color,
-                    unfocusedContainerColor = cellValue.color,
-                    focusedContainerColor = cellValue.color,
-                    focusedIndicatorColor = cellValue.color,
-                    unfocusedIndicatorColor = cellValue.color
-                ),
-                contentPadding = TextFieldDefaults.textFieldWithoutLabelPadding(
-                    top = 0.dp, bottom = 0.dp, start = 0.dp, end = 0.dp
-                ),
-                interactionSource = interactionSource,
-                visualTransformation = VisualTransformation.None
+            Text(
+                text = "Direction: ${if (dir == "h") "Horizontal" else "Vertical"}",
+                style = MaterialTheme.typography.bodyLarge
             )
-        },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            imeAction = ImeAction.Next
-        ),
-        interactionSource = interactionSource,
-        visualTransformation = VisualTransformation.None,
-        modifier = modifier.focusRequester(focusRequester)
-    )
-}
 
-fun parseClues(module: PyObject?): Map<String, Map<Pair<Int, Int>, List<String>>> {
-    val jsonString = module!!.callAttr("get_clues").toJava(String::class.java)
-    val gson = Gson()
-    val type = object : TypeToken<Map<String, Map<String, List<String>>>>() {}.type
-    val rawData: Map<String, Map<String, List<String>>> = gson.fromJson(jsonString, type)
-    return rawData.mapValues { (_, innerMap) ->
-        innerMap.mapKeys { (key, _) ->
-            val (x, y) = key.split(",").map { it.toInt() }
-            Pair(x, y)
-        }
-    }
-}
+            if (selectedWord != null) {
+                val clueDirection = if (dir == "h") "hor" else "vert"
+                val clue = clues[clueDirection]?.get(selectedWord.first())?.firstOrNull() ?: "No clue available"
+                Text(
+                    text = "Clue: $clue",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
 
-fun parseWordCells(module: PyObject?): Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>> {
-    val jsonString = module!!.callAttr("get_word_cells").toJava(String::class.java)
-    val gson = Gson()
-    val type = object : TypeToken<Map<String, Map<String, List<String>>>>() {}.type
-    val rawData: Map<String, Map<String, List<String>>> = gson.fromJson(jsonString, type)
-    return rawData.mapValues { (_, innerMap) ->
-        innerMap.mapKeys { (key, _) ->
-            val (x, y) = key.split(",").map { it.toInt() }
-            Pair(x, y)
-        }.mapValues { (_, value) ->
-            value.map { coord ->
-                val (x, y) = coord.split(",").map { it.toInt() }
-                Pair(x, y)
+//            mb to change and "opt-out" of ExperimentalLayoutApi
+            val isImeVisible = WindowInsets.isImeVisible
+            LaunchedEffect(isImeVisible) {
+                if (!isImeVisible && selectedCell != null) {
+                    selectedCell = null
+                }
             }
         }
     }
 }
 
-data class Cell(
-    val isActive: Boolean,
-    val TFV: TextFieldValue,
-    val color: Color
-)
+@Composable
+fun CrosswordCell(
+    letter: String,
+    isSelected: Boolean,
+    isEnabled: Boolean,
+    onClick: () -> Unit,
+    onClickWhenSelected: () -> Unit = {  },
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+//            .size(48.dp)
+            .background(
+                color = when {
+                    letter == "#" -> Color.Black
+                    isSelected -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.surface
+                },
+                shape = RoundedCornerShape(4.dp) // Add this line
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .clickable(
+                enabled = isEnabled // Use isEnabled to control clickability
+            ) {
+                if (isSelected) {
+                    onClickWhenSelected()
+                } else {
+                    onClick()
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = letter.uppercase(),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+fun Modifier.visibility(visible: Boolean): Modifier {
+    return layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+
+        layout(placeable.width, placeable.height) {
+            if (visible) {
+                // place this item in the original position
+                placeable.placeRelative(0, 0)
+            }
+        }
+    }
+}
+

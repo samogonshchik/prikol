@@ -15,19 +15,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chaquo.python.Python
+import java.io.File
 
 @Composable
 fun HomeScreen(
-    navigateGame: () -> Unit,
-    navigateRules: () -> Unit,
+    navigateNewGame: () -> Unit,
+    navigateResumeGame: () -> Unit,
+//    navigateRules: () -> Unit,
     navigateLearnedWords: () -> Unit
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
+        val context = LocalContext.current
+        val gridFile = File(context.filesDir, "crossword_grid.json")
+
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -36,23 +43,35 @@ fun HomeScreen(
                 .padding(innerPadding)
         ) {
             Text(
-                text = "GAME",
+                text = "NEW GAME",
                 fontSize = 30.sp,
                 modifier = Modifier
                     .padding(0.dp, 0.dp, 0.dp, 20.dp)
-                    .clickable { navigateGame() }
+                    .clickable { navigateNewGame() }
                     .border(BorderStroke(1.dp, Color.Black))
                     .padding(10.dp)
             )
-            Text(
-                text = "RULES",
-                fontSize = 30.sp,
-                modifier = Modifier
-                    .padding(0.dp, 0.dp, 0.dp, 20.dp)
-                    .clickable { navigateRules() }
-                    .border(BorderStroke(1.dp, Color.Black))
-                    .padding(10.dp)
-            )
+            if (gridFile.exists() && gridFile.readText().isNotBlank()) {
+                Text(
+                    text = "RESUME GAME",
+                    fontSize = 30.sp,
+                    modifier = Modifier
+                        .padding(0.dp, 0.dp, 0.dp, 20.dp)
+                        .clickable { navigateResumeGame() }
+                        .border(BorderStroke(1.dp, Color.Black))
+                        .padding(10.dp)
+                )
+            }
+
+//            Text(
+//                text = "RULES",
+//                fontSize = 30.sp,
+//                modifier = Modifier
+//                    .padding(0.dp, 0.dp, 0.dp, 20.dp)
+//                    .clickable { navigateRules() }
+//                    .border(BorderStroke(1.dp, Color.Black))
+//                    .padding(10.dp)
+//            )
             Text(
                 text = "LEARNED WORDS",
                 fontSize = 30.sp,

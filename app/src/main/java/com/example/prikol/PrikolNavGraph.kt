@@ -1,6 +1,6 @@
 package com.example.prikol
 
-import Test
+import CrosswordScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -8,7 +8,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.prikol.ui.CrosswordScreen
 import com.example.prikol.ui.HomeScreen
 import com.example.prikol.ui.LearnedWordsScreen
 import com.example.prikol.ui.RulesScreen
@@ -23,7 +22,6 @@ enum class PrikolScreens() {
     Rules,
     Win,
     LearnedWords,
-    Statistics,
     Test
 }
 
@@ -34,27 +32,38 @@ fun PrikolNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = PrikolScreens.Test.name,
+        startDestination = PrikolScreens.Home.name,
 //        startDestination = PrikolScreens.Home.name,
         modifier = modifier
     ) {
         composable(route = PrikolScreens.Home.name) {
             HomeScreen(
-                navigateGame = { navController.navigate(PrikolScreens.Game.name) },
-                navigateRules = { navController.navigate(PrikolScreens.Rules.name) },
+                navigateResumeGame = { navController.navigate(PrikolScreens.Game.name + "/false") },
+                navigateNewGame = { navController.navigate(PrikolScreens.Game.name + "/true") },
+//                navigateRules = { navController.navigate(PrikolScreens.Rules.name) },
                 navigateLearnedWords = { navController.navigate(PrikolScreens.LearnedWords.name) }
             )
         }
-        composable(route = PrikolScreens.Game.name) {
-            CrosswordScreen(
-                navigateHome = { navController.navigate(PrikolScreens.Home.name) },
-                navigateWin = { wordList ->
-                    // Serialize the list to JSON
-                    val jsonList = Gson().toJson(wordList)
-                    // Encode to handle special characters
-                    val encodedJson = URLEncoder.encode(jsonList, "UTF-8")
-                    navController.navigate("${PrikolScreens.Win.name}/$encodedJson")
+        composable(
+            route = "${PrikolScreens.Game.name}/{newGameQ}",
+            arguments = listOf(
+                navArgument("newGameQ") {
+                    type = NavType.StringType
+                    nullable = true
                 }
+            )
+        ) { backStackEntry ->
+            val newGameQ = backStackEntry.arguments?.getString("newGameQ").toBoolean()
+            CrosswordScreen(
+                newGameQ = newGameQ
+//                navigateHome = { navController.navigate(PrikolScreens.Home.name) },
+//                navigateWin = { wordList ->
+//                    // Serialize the list to JSON
+//                    val jsonList = Gson().toJson(wordList)
+//                    // Encode to handle special characters
+//                    val encodedJson = URLEncoder.encode(jsonList, "UTF-8")
+//                    navController.navigate("${PrikolScreens.Win.name}/$encodedJson")
+//                }
             )
         }
         composable(route = PrikolScreens.Rules.name) {
@@ -93,12 +102,12 @@ fun PrikolNavHost(
                 navigateHome = { navController.navigate(PrikolScreens.Home.name) }
             )
         }
-        composable(
-            route = PrikolScreens.Test.name
-        ) {
-            Test(
-//                navigateHome = { navController.navigate(PrikolScreens.Home.name) }
-            )
-        }
+//        composable(
+//            route = PrikolScreens.Test.name
+//        ) {
+//            Test(
+////                navigateHome = { navController.navigate(PrikolScreens.Home.name) }
+//            )
+//        }
     }
 }
