@@ -62,6 +62,30 @@ fun Test() {
                 mutableListOf(*filledGrid[9].map { if (it == "#") "#" else "" }.toTypedArray())
             )
         }
+        val availableCells = remember {
+            mutableStateListOf(
+                mutableListOf(*filledGrid[0].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[1].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[2].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[3].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[4].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[5].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[6].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[7].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[8].map { it != "#" }.toTypedArray()),
+                mutableListOf(*filledGrid[9].map { it != "#" }.toTypedArray())
+            )
+        }
+        fun checkAndDisableWord(wordCells: List<Pair<Int, Int>>) {
+            val word = wordCells.map { grid[it.first][it.second] }.joinToString("")
+            val correctWord = wordCells.map { filledGrid[it.first][it.second] }.joinToString("")
+            if (word == correctWord && word.isNotEmpty() && wordCells.all { grid[it.first][it.second] != "#" }) {
+                selectedCell = null
+                wordCells.forEach { (row, col) ->
+                    availableCells[row][col] = false
+                }
+            }
+        }
         var dir by remember { mutableStateOf("h") }
         fun getSelectedWord(
             selectedCell: Pair<Int, Int>?,
@@ -73,6 +97,19 @@ fun Test() {
             return wordCells[direction]?.entries?.find { entry ->
                 entry.value.contains(selectedCell)
             }?.value
+        }
+        fun getAvailableDirections(
+            cell: Pair<Int, Int>,
+            wordCells: Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>
+        ): List<String> {
+            val directions = mutableListOf<String>()
+            if (wordCells["hor"]?.entries?.any { it.value.contains(cell) } == true) {
+                directions.add("h")
+            }
+            if (wordCells["vert"]?.entries?.any { it.value.contains(cell) } == true) {
+                directions.add("v")
+            }
+            return directions
         }
 
         // Get the currently selected word
@@ -96,16 +133,27 @@ fun Test() {
                         CrosswordCell(
                             letter = elem,
                             isSelected = selectedCell == Pair(r, c),
+                            isEnabled = availableCells[r][c],
                             onClick = {
+                                val availableDirections = getAvailableDirections(Pair(r, c), wordCells)
+                                dir = availableDirections[0]
                                 focusRequester.requestFocus()
                                 keyboardController?.show()
                                 selectedCell = Pair(r, c)
                                 println("selected cell now: $selectedCell")
                             },
-                            onClickWhenSelected =
-                            {
-                                println("clicked selected cell ${Pair(r, c)}")
-                                dir = if (dir == "h") "v" else "h"
+                            onClickWhenSelected = {
+                                if (availableCells[r][c]) {
+                                    val availableDirections = getAvailableDirections(Pair(r, c), wordCells)
+                                    if (availableDirections.size > 1) {
+                                        // Toggle to the other direction if both are available
+                                        dir = if (dir == "h") "v" else "h"
+                                    } else if (availableDirections.isNotEmpty() && dir != availableDirections[0]) {
+                                        // Switch to the only available direction if different
+                                        dir = availableDirections[0]
+                                    }
+                                    println("clicked selected cell ${Pair(r, c)}, direction now $dir")
+                                }
                             },
                             modifier = Modifier
                                 .aspectRatio(1f)
@@ -119,13 +167,22 @@ fun Test() {
 //            hidden TextField for input (required to show IME)
             TextField(
                 value = tfv,
-                onValueChange = {
-                    tfv = if (tfv.isNotBlank() && it.isNotBlank()) {
-                        it.last().toString()
+                onValueChange = { newValue ->
+                    tfv = if (tfv.isNotBlank() && newValue.isNotBlank()) {
+                        newValue.last().toString()
                     } else {
-                        it
+                        newValue
                     }
-                    if (selectedCell != null) grid[selectedCell!!.first][selectedCell!!.second] = tfv
+                    if (selectedCell != null && availableCells[selectedCell!!.first][selectedCell!!.second]) {
+                        val currentCell = selectedCell!!
+                        grid[currentCell.first][currentCell.second] = tfv
+
+                        // Check if the current word is completed
+                        val currentWord = getSelectedWord(currentCell, dir, wordCells)
+                        if (currentWord != null) {
+                            checkAndDisableWord(currentWord)
+                        }
+                    }
                 },
                 modifier = Modifier
                     .focusRequester(focusRequester)
@@ -168,6 +225,7 @@ fun Test() {
 fun CrosswordCell(
     letter: String,
     isSelected: Boolean,
+    isEnabled: Boolean,
     onClick: () -> Unit,
     onClickWhenSelected: () -> Unit = {  },
     modifier: Modifier = Modifier
@@ -176,15 +234,21 @@ fun CrosswordCell(
         modifier = modifier
 //            .size(48.dp)
             .background(
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-//                shape = RoundedCornerShape(4.dp)
+                color = when {
+                    letter == "#" -> Color.Black
+                    isSelected -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.surface
+                },
+                shape = RoundedCornerShape(4.dp) // Add this line
             )
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.onSurface,
                 shape = RoundedCornerShape(4.dp)
             )
-            .clickable {
+            .clickable(
+                enabled = isEnabled // Use isEnabled to control clickability
+            ) {
                 if (isSelected) {
                     onClickWhenSelected()
                 } else {
