@@ -36,6 +36,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
@@ -98,8 +99,10 @@ fun Test() {
                 modifier = Modifier
                     .focusRequester(focusRequester)
 //                    .size(1.dp)
-                    .alpha(0f),
+//                    .alpha(0f),
+                    .visibility(false)
             )
+
         }
     }
 }
@@ -174,4 +177,15 @@ fun CrosswordCell(
 //    }
 }
 
+fun Modifier.visibility(visible: Boolean): Modifier {
+    return layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
 
+        layout(placeable.width, placeable.height) {
+            if (visible) {
+                // place this item in the original position
+                placeable.placeRelative(0, 0)
+            }
+        }
+    }
+}
