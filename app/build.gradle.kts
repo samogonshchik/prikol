@@ -12,7 +12,7 @@ plugins {
 android {
     compileSdk = 34
     defaultConfig {
-        applicationId = "com.example.prikol"
+        applicationId = "com.example.crosswordapp"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -54,7 +54,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    namespace = "com.example.prikol"
+    namespace = "com.example.crosswordapp"
 }
 
 // choco
@@ -88,13 +88,10 @@ dependencies {
 //  Accompanist
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
     implementation("com.google.accompanist:accompanist-webview:0.31.3-beta")
-
-    implementation("com.google.code.gson:gson:2.10.1")
-
-    // Navigation Compose
+//  Navigation Compose
     implementation("androidx.navigation:navigation-compose:2.8.3")
-    // Gson for JSON serialization (or use another library like Moshi)
-    implementation("com.google.code.gson:gson:2.11.0")
 
+//  CrosswordApp specific
+    implementation("com.google.code.gson:gson:2.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }

@@ -1,4 +1,4 @@
-package com.example.prikol
+package com.example.crosswordapp
 
 import CrosswordScreen
 import androidx.compose.runtime.Composable
@@ -8,44 +8,41 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.prikol.ui.HomeScreen
-import com.example.prikol.ui.LearnedWordsScreen
-import com.example.prikol.ui.RulesScreen
-import com.example.prikol.ui.WinScreen
+import com.example.crosswordapp.ui.screens.HomeScreen
+import com.example.crosswordapp.ui.screens.LearnedWordsScreen
+import com.example.crosswordapp.ui.screens.WinScreen
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.net.URLEncoder
 
-enum class PrikolScreens() {
+enum class CrosswordAppScreens() {
     Home,
     Game,
-    Rules,
     Win,
     LearnedWords,
     Test
 }
 
 @Composable
-fun PrikolNavHost(
+fun CrosswordAppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
-        startDestination = PrikolScreens.Home.name,
-//        startDestination = PrikolScreens.Home.name,
+        startDestination = CrosswordAppScreens.Home.name,
         modifier = modifier
     ) {
-        composable(route = PrikolScreens.Home.name) {
+        composable(route = CrosswordAppScreens.Home.name) {
             HomeScreen(
-                navigateResumeGame = { navController.navigate(PrikolScreens.Game.name + "/false") },
-                navigateNewGame = { navController.navigate(PrikolScreens.Game.name + "/true") },
-//                navigateRules = { navController.navigate(PrikolScreens.Rules.name) },
-                navigateLearnedWords = { navController.navigate(PrikolScreens.LearnedWords.name) }
+                navigateResumeGame = { navController.navigate(CrosswordAppScreens.Game.name + "/false") },
+                navigateNewGame = { navController.navigate(CrosswordAppScreens.Game.name + "/true") },
+//                navigateRules = { navController.navigate(CrosswordAppScreens.Rules.name) },
+                navigateLearnedWords = { navController.navigate(CrosswordAppScreens.LearnedWords.name) }
             )
         }
         composable(
-            route = "${PrikolScreens.Game.name}/{newGameQ}",
+            route = "${CrosswordAppScreens.Game.name}/{newGameQ}",
             arguments = listOf(
                 navArgument("newGameQ") {
                     type = NavType.StringType
@@ -56,23 +53,23 @@ fun PrikolNavHost(
             val newGameQ = backStackEntry.arguments?.getString("newGameQ").toBoolean()
             CrosswordScreen(
                 newGameQ = newGameQ,
-                navigateHome = { navController.navigate(PrikolScreens.Home.name) },
-                navigateWin = { wordList ->
+                navigateToHome = { navController.navigate(CrosswordAppScreens.Home.name) },
+                navigateToWin = { wordList ->
                     // Serialize the list to JSON
                     val jsonList = Gson().toJson(wordList)
                     // Encode to handle special characters
                     val encodedJson = URLEncoder.encode(jsonList, "UTF-8")
-                    navController.navigate("${PrikolScreens.Win.name}/$encodedJson")
+                    navController.navigate("${CrosswordAppScreens.Win.name}/$encodedJson")
                 }
             )
         }
-//        composable(route = PrikolScreens.Rules.name) {
+//        composable(route = CrosswordAppScreens.Rules.name) {
 //            RulesScreen(
-//                navigateHome = { navController.navigate(PrikolScreens.Home.name) }
+//                navigateHome = { navController.navigate(CrosswordAppScreens.Home.name) }
 //            )
 //        }
         composable(
-            route = "${PrikolScreens.Win.name}/{wordList}",
+            route = "${CrosswordAppScreens.Win.name}/{wordList}",
             arguments = listOf(
                 navArgument("wordList") {
                     type = NavType.StringType
@@ -92,21 +89,21 @@ fun PrikolNavHost(
             } ?: emptyList()
             WinScreen(
                 placedWords = wordList,
-                navigateHome = { navController.navigate(PrikolScreens.Home.name) }
+                navigateHome = { navController.navigate(CrosswordAppScreens.Home.name) }
             )
         }
         composable(
-            route = PrikolScreens.LearnedWords.name
+            route = CrosswordAppScreens.LearnedWords.name
         ) {
             LearnedWordsScreen(
-                navigateHome = { navController.navigate(PrikolScreens.Home.name) }
+                navigateHome = { navController.navigate(CrosswordAppScreens.Home.name) }
             )
         }
 //        composable(
-//            route = PrikolScreens.Test.name
+//            route = CrosswordAppScreens.Test.name
 //        ) {
 //            Test(
-////                navigateHome = { navController.navigate(PrikolScreens.Home.name) }
+////                navigateHome = { navController.navigate(CrosswordAppScreens.Home.name) }
 //            )
 //        }
     }

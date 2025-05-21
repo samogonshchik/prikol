@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <application
         android:requestLegacyExternalStorage="true"
-        android:name=".PrikolApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -12,12 +10,12 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Prikol"
+        android:theme="@style/Theme.CrosswordApp"
         tools:targetApi="31">
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.example.prikol.fileprovider"
+            android:authorities="com.example.crosswordapp.fileprovider"
             android:grantUriPermissions="true"
             android:exported="false">
             <meta-data
@@ -27,13 +25,13 @@
         </provider>
 
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.crosswordapp.MainActivity"
             android:exported="true"
 
             android:windowSoftInputMode="adjustResize"
 
             android:label="@string/app_name"
-            android:theme="@style/Theme.Prikol">
+            android:theme="@style/Theme.CrosswordApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

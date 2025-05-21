@@ -1,8 +1,6 @@
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +8,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
@@ -37,14 +34,13 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.prikol.ui.clues
-import com.example.prikol.ui.filledGrid
-import com.example.prikol.ui.wordCells
-import android.content.Context
+import com.example.crosswordapp.data.clues
+import com.example.crosswordapp.data.filledGrid
+import com.example.crosswordapp.data.wordCells
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.platform.LocalContext
-import com.example.prikol.ui.placedWords
+import com.example.crosswordapp.data.placedWords
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File

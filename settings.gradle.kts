@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Prikol"
+rootProject.name = "CrosswordApp"
 include(":app")
  
