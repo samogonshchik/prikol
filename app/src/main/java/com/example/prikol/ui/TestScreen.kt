@@ -1,12 +1,17 @@
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
@@ -38,38 +44,73 @@ fun Test() {
     Scaffold(
 
     ) { innerPadding ->
-        val cells = remember {
-            mutableStateListOf("A", "", "C", "") // 2x2 grid example
-        }
-        var selectedCell by remember { mutableStateOf<Int?>(null) }
+        var selectedCell by remember { mutableStateOf<Pair<Int, Int>?>(null) }
         var tfv by remember { mutableStateOf("") }
         val focusRequester = remember { FocusRequester() }
         val keyboardController = LocalSoftwareKeyboardController.current
+        val grid = remember {
+            mutableStateListOf(
+                mutableListOf(*filledGrid[0].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[1].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[2].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[3].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[4].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[5].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[6].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[7].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[8].map { if (it == "#") "#" else "" }.toTypedArray()),
+                mutableListOf(*filledGrid[9].map { if (it == "#") "#" else "" }.toTypedArray())
+            )
+        }
+        var dir by remember { mutableStateOf("h") }
+        fun getSelectedWord(
+            selectedCell: Pair<Int, Int>?,
+            dir: String,
+            wordCells: Map<String, Map<Pair<Int, Int>, List<Pair<Int, Int>>>>
+        ): List<Pair<Int, Int>>? {
+            if (selectedCell == null) return null
+            val direction = if (dir == "h") "hor" else "vert"
+            return wordCells[direction]?.entries?.find { entry ->
+                entry.value.contains(selectedCell)
+            }?.value
+        }
+
+        // Get the currently selected word
+        val selectedWord = getSelectedWord(selectedCell, dir, wordCells)
 
         Column(
+            verticalArrangement = Arrangement.spacedBy(1.dp),
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
+                .fillMaxWidth()
+                .padding(10.dp)
+//                .border(BorderStroke(1.dp, Color.Black))
         ) {
-            repeat(2) { row ->
-                Row {
-                    repeat(2) { col ->
-                        val cellIndex = row * 2 + col
 
+
+            grid.forEachIndexed { r, row ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
+                    row.forEachIndexed { c, elem ->
                         CrosswordCell(
-                            letter = cells[cellIndex],
-                            isSelected = selectedCell == cellIndex,
+                            letter = elem,
+                            isSelected = selectedCell == Pair(r, c),
                             onClick = {
                                 focusRequester.requestFocus()
                                 keyboardController?.show()
-                                selectedCell = cellIndex
+                                selectedCell = Pair(r, c)
                                 println("selected cell now: $selectedCell")
                             },
                             onClickWhenSelected =
                             {
-                                println("Clicked selected cell $cellIndex")
+                                println("clicked selected cell ${Pair(r, c)}")
+                                dir = if (dir == "h") "v" else "h"
                             },
-                            modifier = Modifier.padding(2.dp)
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .weight(1f)
+//                                .padding(1.dp)
                         )
                     }
                 }
@@ -84,15 +125,33 @@ fun Test() {
                     } else {
                         it
                     }
-                    if (selectedCell != null) cells[selectedCell!!] = tfv
+                    if (selectedCell != null) grid[selectedCell!!.first][selectedCell!!.second] = tfv
                 },
                 modifier = Modifier
                     .focusRequester(focusRequester)
                     .visibility(false)
                     .onFocusChanged { focusState ->
-                        if (!focusState.isFocused) { selectedCell = null }
+                        if (!focusState.isFocused) {
+                            selectedCell = null
+                        }
                     }
+                    .size(1.dp)
             )
+
+            Text(
+                text = "Direction: ${if (dir == "h") "Horizontal" else "Vertical"}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            if (selectedWord != null) {
+                val clueDirection = if (dir == "h") "hor" else "vert"
+                val clue = clues[clueDirection]?.get(selectedWord.first())?.firstOrNull() ?: "No clue available"
+                Text(
+                    text = "Clue: $clue",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
 
 //            mb to change and "opt-out" of ExperimentalLayoutApi
             val isImeVisible = WindowInsets.isImeVisible
@@ -115,7 +174,7 @@ fun CrosswordCell(
 ) {
     Box(
         modifier = modifier
-            .size(48.dp)
+//            .size(48.dp)
             .background(
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
 //                shape = RoundedCornerShape(4.dp)
@@ -157,7 +216,7 @@ fun Modifier.visibility(visible: Boolean): Modifier {
 }
 
 // Grid: 2D List of Characters (including '#')
-val grid = listOf(
+val filledGrid = listOf(
     listOf("s", "t", "a", "t", "e", "m", "e", "n", "t", "#"),
     listOf("#", "r", "#", "o", "#", "e", "#", "o", "#", "a"),
     listOf("d", "e", "t", "o", "n", "a", "t", "o", "r", "s"),
