@@ -37,6 +37,9 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.prikol.ui.clues
+import com.example.prikol.ui.filledGrid
+import com.example.prikol.ui.wordCells
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -77,13 +80,17 @@ fun Test() {
             )
         }
         fun checkAndDisableWord(wordCells: List<Pair<Int, Int>>) {
+            println("checking word")
             val word = wordCells.map { grid[it.first][it.second] }.joinToString("")
             val correctWord = wordCells.map { filledGrid[it.first][it.second] }.joinToString("")
             if (word == correctWord && word.isNotEmpty() && wordCells.all { grid[it.first][it.second] != "#" }) {
-                selectedCell = null
+                println("disabling word")
                 wordCells.forEach { (row, col) ->
                     availableCells[row][col] = false
                 }
+                selectedCell = null
+//                mb remove hiding keyboard
+                keyboardController?.hide()
             }
         }
         var dir by remember { mutableStateOf("h") }
@@ -168,19 +175,39 @@ fun Test() {
             TextField(
                 value = tfv,
                 onValueChange = { newValue ->
-                    tfv = if (tfv.isNotBlank() && newValue.isNotBlank()) {
+                    val oldTfv = tfv
+                    tfv = if (oldTfv.isNotBlank() && newValue.isNotBlank()) {
                         newValue.last().toString()
                     } else {
                         newValue
                     }
                     if (selectedCell != null && availableCells[selectedCell!!.first][selectedCell!!.second]) {
                         val currentCell = selectedCell!!
-                        grid[currentCell.first][currentCell.second] = tfv
-
-                        // Check if the current word is completed
-                        val currentWord = getSelectedWord(currentCell, dir, wordCells)
-                        if (currentWord != null) {
-                            checkAndDisableWord(currentWord)
+                        if (tfv != oldTfv) { // Only update if input changed
+                            grid[currentCell.first][currentCell.second] = tfv
+                            // Check both horizontal and vertical words
+                            val horizontalWord = getSelectedWord(currentCell, "h", wordCells)
+                            val verticalWord = getSelectedWord(currentCell, "v", wordCells)
+                            if (horizontalWord != null) {
+                                checkAndDisableWord(horizontalWord)
+                            }
+                            if (verticalWord != null) {
+                                checkAndDisableWord(verticalWord)
+                            }
+                            // Move to next available cell in current word
+                            val currentWord = getSelectedWord(currentCell, dir, wordCells)
+                            if (currentWord != null && tfv.isNotBlank()) {
+                                val currentIndex = currentWord.indexOf(currentCell)
+                                val nextIndex = (currentIndex + 1)
+                                if (nextIndex < currentWord.size) {
+                                    val nextCell = currentWord[nextIndex]
+                                    if (availableCells[nextCell.first][nextCell.second]) {
+                                        selectedCell = nextCell
+                                        focusRequester.requestFocus()
+                                        keyboardController?.show()
+                                    }
+                                }
+                            }
                         }
                     }
                 },
@@ -279,99 +306,3 @@ fun Modifier.visibility(visible: Boolean): Modifier {
     }
 }
 
-// Grid: 2D List of Characters (including '#')
-val filledGrid = listOf(
-    listOf("s", "t", "a", "t", "e", "m", "e", "n", "t", "#"),
-    listOf("#", "r", "#", "o", "#", "e", "#", "o", "#", "a"),
-    listOf("d", "e", "t", "o", "n", "a", "t", "o", "r", "s"),
-    listOf("#", "y", "#", "k", "#", "d", "#", "d", "#", "s"),
-    listOf("a", "#", "a", "#", "g", "o", "a", "l", "i", "e"),
-    listOf("n", "e", "p", "h", "e", "w", "#", "e", "#", "t"),
-    listOf("t", "#", "o", "#", "n", "#", "m", "#", "n", "#"),
-    listOf("s", "p", "l", "a", "t", "t", "e", "r", "e", "d"),
-    listOf("y", "#", "l", "#", "l", "#", "n", "#", "a", "#"),
-    listOf("#", "b", "o", "d", "y", "g", "u", "a", "r", "d")
-)
-
-// Clues: Map with Pair<Int, Int> as keys and List of Strings as values, nested under "hor" and "vert"
-val clues = mapOf(
-    "hor" to mapOf(
-        Pair(0, 0) to listOf("A declaration or remark"),
-        Pair(2, 0) to listOf("A device used to detonate an explosive device etc"),
-        Pair(4, 4) to listOf("A goalkeeper or goaltender"),
-        Pair(5, 0) to listOf("A son of one's sibling, brother-in-law, or sister-in-law"),
-        Pair(7, 0) to listOf("To splash"),
-        Pair(9, 1) to listOf("To act as bodyguard for")
-    ),
-    "vert" to mapOf(
-        Pair(0, 1) to listOf("A playing card or die with the rank of three"),
-        Pair(0, 3) to listOf("To get into one's hands, possession or control, with or without force"),
-        Pair(0, 5) to listOf("A field or pasture"),
-        Pair(0, 7) to listOf("To think or ponder"),
-        Pair(1, 9) to listOf("Something or someone of any value"),
-        Pair(4, 0) to listOf("Restless, apprehensive and fidgety"),
-        Pair(4, 2) to listOf("A very handsome young man"),
-        Pair(4, 4) to listOf("In a gentle manner"),
-        Pair(6, 6) to listOf("a bill of fare"),
-        Pair(6, 8) to listOf("At or towards a position close in space or time")
-    )
-)
-
-// Word Cells: Map with Pair<Int, Int> as keys and List of Pair<Int, Int> as values, nested under "hor" and "vert"
-val wordCells = mapOf(
-    "hor" to mapOf(
-        Pair(0, 0) to listOf(
-            Pair(0, 0), Pair(0, 1), Pair(0, 2), Pair(0, 3), Pair(0, 4),
-            Pair(0, 5), Pair(0, 6), Pair(0, 7), Pair(0, 8)
-        ),
-        Pair(2, 0) to listOf(
-            Pair(2, 0), Pair(2, 1), Pair(2, 2), Pair(2, 3), Pair(2, 4),
-            Pair(2, 5), Pair(2, 6), Pair(2, 7), Pair(2, 8), Pair(2, 9)
-        ),
-        Pair(4, 4) to listOf(
-            Pair(4, 4), Pair(4, 5), Pair(4, 6), Pair(4, 7), Pair(4, 8), Pair(4, 9)
-        ),
-        Pair(5, 0) to listOf(
-            Pair(5, 0), Pair(5, 1), Pair(5, 2), Pair(5, 3), Pair(5, 4), Pair(5, 5)
-        ),
-        Pair(7, 0) to listOf(
-            Pair(7, 0), Pair(7, 1), Pair(7, 2), Pair(7, 3), Pair(7, 4),
-            Pair(7, 5), Pair(7, 6), Pair(7, 7), Pair(7, 8), Pair(7, 9)
-        ),
-        Pair(9, 1) to listOf(
-            Pair(9, 1), Pair(9, 2), Pair(9, 3), Pair(9, 4), Pair(9, 5),
-            Pair(9, 6), Pair(9, 7), Pair(9, 8), Pair(9, 9)
-        )
-    ),
-    "vert" to mapOf(
-        Pair(0, 1) to listOf(Pair(0, 1), Pair(1, 1), Pair(2, 1), Pair(3, 1)),
-        Pair(0, 3) to listOf(Pair(0, 3), Pair(1, 3), Pair(2, 3), Pair(3, 3)),
-        Pair(0, 5) to listOf(
-            Pair(0, 5), Pair(1, 5), Pair(2, 5), Pair(3, 5), Pair(4, 5), Pair(5, 5)
-        ),
-        Pair(0, 7) to listOf(
-            Pair(0, 7), Pair(1, 7), Pair(2, 7), Pair(3, 7), Pair(4, 7), Pair(5, 7)
-        ),
-        Pair(1, 9) to listOf(
-            Pair(1, 9), Pair(2, 9), Pair(3, 9), Pair(4, 9), Pair(5, 9)
-        ),
-        Pair(4, 0) to listOf(
-            Pair(4, 0), Pair(5, 0), Pair(6, 0), Pair(7, 0), Pair(8, 0)
-        ),
-        Pair(4, 2) to listOf(
-            Pair(4, 2), Pair(5, 2), Pair(6, 2), Pair(7, 2), Pair(8, 2), Pair(9, 2)
-        ),
-        Pair(4, 4) to listOf(
-            Pair(4, 4), Pair(5, 4), Pair(6, 4), Pair(7, 4), Pair(8, 4), Pair(9, 4)
-        ),
-        Pair(6, 6) to listOf(Pair(6, 6), Pair(7, 6), Pair(8, 6), Pair(9, 6)),
-        Pair(6, 8) to listOf(Pair(6, 8), Pair(7, 8), Pair(8, 8), Pair(9, 8))
-    )
-)
-
-// Placed Words: List of Strings
-val placedWords = listOf(
-    "detonators", "asset", "took", "trey", "statement", "noodle",
-    "meadow", "goalie", "nephew", "gently", "bodyguard", "apollo",
-    "splattered", "menu", "antsy", "near"
-)
